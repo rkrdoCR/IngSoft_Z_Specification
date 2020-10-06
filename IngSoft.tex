@@ -1,0 +1,240 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{graphicx}
+\graphicspath{{images/}}
+%\setcounter{secnumdepth}{0}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{oz, amsfonts}
+\usepackage{fancyhdr}
+\usepackage{tikz}
+\usepackage{amssymb}
+
+\usepackage[nottoc]{tocbibind} %Adds "References" to the table of contents
+\usepackage{url}
+
+%% Comandos
+\renewcommand{\familydefault}{\rmdefault}
+\renewcommand*{\defs}{\mathrel{\hat=}}
+\newcommand*{\LET}{LET}
+\newcommand*{\IF}{\textbf{IF}}
+\newcommand*{\THEN}{\textbf{THEN}}
+\newcommand*{\ELSE}{\textbf{ELSE}}
+
+\title{Entrega de paquetes. Bodegaje y entrega al comprador.\\Especificación en Z.}
+%%
+
+\pagestyle{fancy}
+\fancyhead[LE,RO]{Entrega de paquetes. Bodegaje y entrega al comprador.}
+\fancyhead[RE,LO]{}
+
+\newcommand{\myBox}[3]{%	
+	\begin{tcolorbox}[colback=#1,colframe=#2]
+		\centering{#3}
+	\end{tcolorbox}
+}
+ 
+%
+\begin{document}
+
+
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.33\textwidth]{Teclogocompleto.jpg}\par\vspace{1cm}
+	{\scshape\large \textbf{Instituto Tecnológico de Costa Rica }\par}
+	\vspace{1cm}
+	{\scshape\Large MC 7204 Ingeniería de Software\par}
+	\vspace{1.5cm}
+	{\Large\bfseries 
+	Entrega de paquetes.\\Bodegaje y entrega al comprador.\\Especificación en Z.\par}
+	\vspace{2cm}
+	{\Large\itshape Marco Acuña  \\
+	 Ricardo Alfaro\par}
+	\vfill
+	Profesor:\par
+	Ignacio Trejos Zelaya\textsc{}
+	\vfill
+
+% Bottom of the page
+	{\large} Noviembre 2020 \par
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+
+\section{Resumen}
+El comercio ha sido una actividad fundamental en la historia de la humanidad y como tal ha evolucionado de acuerdo a las tecnologías disponibles en las diferentes épocas. 
+En el mundo actual se pueden observar fácilmente dos ejes principales en el establecimiento de las relaciones comerciales: 
+\begin{itemize}
+\item La comodidad y seguridad que brindan los medios electrónicos de pago para adquirir productos en el exterior a través de sitios web de tipo comercio electrónico (e-commerce)
+\item El traslado de los bienes adquiridos que realizan las empresas de logística y mensajería apoyadas también en los beneficios tecnológicos actuales.
+\end{itemize} 
+La siguiente lista resume un flujo común (hoy en día) de adquisición y entrega de un paquete:
+\begin{enumerate}
+\item La persona que desea adquirir un producto cuenta con lo siguiente:
+\begin{enumerate}
+\item Una cuenta con alguna empresa de logística y mensajería a nivel nacional.
+\item Algún medio de pago electrónico que le permita hacer compras en el extranjero.
+\end{enumerate}
+\item El comprador adquiere uno o varios productos en un sitio de comercio electrónico.
+\item El comprador envía los productos adquiridos al casillero que le fue asignado por parte de la empresa de logística y mensajería.
+\item La empresa de logística y mensajería procesa el paquete recibido y lo asigna a una carga y a un vuelo que lo traerá al país.
+\item Una vez en el país el paquete es procesado por aduanas para lo referente a tramites de nacionalización.
+\item La empresa de logística y mensajería mueve el paquete a sus bodegas en el pais para proseguir con lo referente a la entrega del paquete al comprador.
+\item El flujo finaliza cuando el comprador ha recibido el paquete.
+\end{enumerate}
+
+\section{Definición del problema}
+La entrega pronta y precisa de los paquetes adquiridos mediante compras en el exterior. El sistema toma en cuenta la parte del proceso que inicia luego de que el paquete ha sido procesado por la aduana, esto se conoce como tramites de nacionalización y entre otras cosas incluye la revisión de permisos y el cargo de los impuestos de importación. \\Para efectos de este trabajo se denomina dicho subproceso como \textit{Bodegaje y entrega al comprador} y los pasos que comprende son:
+\begin{enumerate}
+\item El paquete existe en la bodega de la empresa de mensajería y no esta asignado a alguna ruta para su entrega al comprador.
+\item El paquete es retirado de la bodega, es asignado a un mensajero y puesto en ruta.
+\item El mensajero intenta la entrega del paquete, acá se pueden presentar los siguientes escenarios:
+\begin{enumerate}
+\item El comprador esta disponible en la dirección de entrega y recibe el paquete.
+\item El comprador no se encuentra en la dirección de entrega, por lo que el paquete debe ser devuelto de nuevo a la bodega.
+\end{enumerate}
+\item Si el paquete no fue recibido por el comprador, el mismo debe volver a ser ingresado a la bodega.
+\end{enumerate}
+
+\newpage
+\section{Especificación en Z}
+
+Se presenta una especificación formal en Z para el subproceso denominado en este trabajo como \textit{Bodegaje y entrega al comprador} el cual es parte de un sistema de manejo y entrega de paquetes cuya finalidad es de que sea utilizado por empresas de servicios logística y de mensajería.  
+
+\subsection{Variables globales}
+Se definen los tipos \textit{Paquete} y \textit{Persona} como los conjuntos que se utilizan en esta especificación. 
+
+\begin{zed}
+[Paquete,~Persona]
+\end{zed}
+
+\subsection{Respuestas del sistema}
+
+Cada operación del sistema debe reportar su resultado mediante un mensaje de respuesta que informe al usuario acerca del estado actual del proceso.
+
+\begin{zed}
+Respuesta~~::=~~OK\\
+~~~~~~|~~paqueteDisponibleParaEntrega\\
+~~~~~~|~~paqueteAlmacenado\\
+~~~~~~|~~paqueteDesalmacenado\\
+~~~~~~|~~paqueteAsignado\\
+\end{zed}
+
+\newpage
+\subsection{Bodegaje y entrega al comprador}
+
+En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encuentran en la bodega, el objetivo final de la empresa de logística y mensajería es entregar el paquete al comprador, para ello debe de fijar una ruta y asignar el paquete a un mensajero, los paquetes que aun están en la bodega y los que ya fueron puestos en ruta están pendientes de entregar a la persona(comprador) pertenecen.
+
+\begin{schema}{EntregaPaquete}
+enBodega, enRuta, pendienteEntrega, entregado : \power Paquete\\
+comprador, mensajero : \power Persona\\
+pertenece : Paquete \pfun Persona\\
+asignado : Paquete \pfun Persona
+\where
+pendienteEntrega = enBodega \cup enRuta \\
+pendienteEntrega = \dom pertenece \\
+enRuta = \dom asignado\\
+mensajero = \ran asignado\\
+comprador = \ran pertenece
+\end{schema}
+
+\subsection{Estado inicial}
+
+Inicialmente los paquetes se encuentran en la bodega, no han sido asignados a un mensajero por lo tanto no están asociados a ninguna ruta. El total de paquetes por entregar es igual al de los paquetes que se encuentran en la bodega y el total de entregados corresponde a 0.\\
+El comprador esta definido en el rango de la función pertenece, el mensajero no puede ser especificado ya que aun no esta definido el rango de la función asignado.
+
+\begin{schema}{InitEntregaPaquete}
+EntregaPaquete'\\
+\where
+enBodega' \neq \emptyset\\
+enRuta' = \emptyset\\
+entregado' = \emptyset\\
+comprador' = \ran pertenece'\\
+pendienteEntrega' = enBodega'
+\end{schema}
+
+\section{Operaciones}
+
+En esta sección se provee la especificación formal de las operaciones que se implementaran en el modulo de \textit{Bodegaje y entrega al comprador}. Se introducen también algunos diagramas de Venn con la intención de que permitan apreciar con mayor claridad de el estado de los paquetes luego de que una o varias operaciones son ejecutadas.
+
+\subsection{Consultar paquete}
+
+Se comprueba que existen paquetes pendientes de entrega en la bodega y que los paquetes requeridos se encuentran actualmente almacenados.
+
+\begin{schema}{ConsultarPaquete}
+\Xi EntregaPaquete\\
+p? : Paquete\\
+r! : Respuesta
+\where
+enBodega \neq \emptyset\\
+p? \in enBodega\\
+r! = paqueteDisponibleParaEntrega
+\end{schema}
+
+\subsection{Desalmacenar paquete}
+
+La operacion $DesalmacenarOK$ permite tomar los paquetes de la bodega con el fin de que estos sean procesados para su entrega. Como resultado de esta operación la clase EntregaPaquete es modificada ya que la cantidad de paquetes en la bodega cambió.
+
+\begin{schema}{DesalmacenarOK}
+\Delta EntregaPaquete\\
+p? : Paquete\\
+r! : Respuesta
+\where
+p? \in enBodega\\
+p? \notin  enRuta\\
+enBodega' = enBodega \setminus \{p?\}\\
+r! =paqueteDesalmacenado
+\end{schema}
+
+\subsection{Asignar paquete}
+
+Una vez que los paquetes son tomados de la bodega estos deben ser asignados a los mensajeros que cubren las rutas que incluyen las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y los mensajeros corresponden al rango de la función \textit asignado. 
+
+\begin{schema}{EnRutaOK}
+\Delta EntregaPaquete\\
+p? : Paquete\\
+r! : Respuesta
+\where
+p? \notin  enBodega\\
+enRuta' = enRuta \cup \{p?\}\\
+mensajero' = \ran asignado\\
+r! = paqueteAsignado
+\end{schema}
+
+Luego de ejecutadas estas tres operaciones la clase EntregaPaquete ha sido modificada por el movimiento de paquetes desde la bodega hacia la asignacion de rutas, el estado del sistema se puede apreciar en el siguiente diagrama.
+
+%diagrama
+\begin{center}
+\begin{tikzpicture}
+
+    \node at (6.72,4.75) {Paquete};
+
+    \draw  (-2.5,-1.5)  rectangle (7.5,4.5);
+
+    \draw[] (0.7,1.5) ellipse (3cm and 2.5cm);
+    \draw[] (1.8,1) ellipse (0.75cm and 1.25cm);
+    \draw[] (-0.3,1) ellipse (1cm and 1.5cm);
+    
+    \draw[] (5.7,1.5) ellipse (1.5cm and 2cm);    
+    
+    \node at (5.7,2.5) {entregado};
+    \node at (0.5,3) {pendienteEntrega};
+    \node at (-0.27,1.3) {enBodega};
+    \node at (1.8,1.5) {enRuta};
+    
+\end{tikzpicture}
+\end{center}
+
+\newpage
+\begin{thebibliography}{00}
+\bibitem{b0} Software Development with Z, J.B. Wordsworth, IBM UK Labs Ltd. First Printed 1992
+\bibitem{b1} The Z notation: A reference Manual, J.M . Spivey, 2nd Edition, 1998.
+\bibitem{b2} Ingeniería de Software, Referencias varias, Prof.Ignacio Trejos Zelaya, ITCR.2014. \url{https://tecdigital.tec.ac.cr/dotlrn/classes/MC/MC7204/S-2-2018.SJ.MC7204.40/file-storage/#/58119055}
+\bibitem{b3} Fuzz Manual, J.M. Spivey, 2nd Edition, Oxford, England, 2000.
+%\bibitem{b4} Instalación de Fuzz, verificador de Z en MacOS, Christopher Jiménez, ITCR, 2018 URL \url{https://tecdigital.tec.ac.cr/dotlrn/classes/MC/MC7204/S-2-2018.SJ.MC7204.40/file-storage/#/59221405}
+\end{thebibliography}
+
+\end{document}
