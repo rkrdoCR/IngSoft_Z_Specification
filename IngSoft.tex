@@ -9,7 +9,16 @@
 \usepackage{oz, amsfonts}
 \usepackage{fancyhdr}
 \usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
 \usepackage{amssymb}
+
+\tikzstyle{line} = [draw, -latex']
+
+\usetikzlibrary{arrows.meta,
+                calc, chains,
+                quotes,
+                positioning,
+                shapes.geometric}               
 
 \usepackage[nottoc]{tocbibind} %Adds "References" to the table of contents
 \usepackage{url}
@@ -69,7 +78,7 @@ El comercio ha sido una actividad fundamental en la historia de la humanidad y c
 En el mundo actual se pueden observar fácilmente dos ejes principales en el establecimiento de las relaciones comerciales: 
 \begin{itemize}
 \item La comodidad y seguridad que brindan los medios electrónicos de pago para adquirir productos en el exterior a través de sitios web de tipo comercio electrónico (e-commerce)
-\item El traslado de los bienes adquiridos que realizan las empresas de logística y mensajería apoyadas también en los beneficios tecnológicos actuales.
+\item El traslado de los bienes adquiridos que realizan las empresas de logística y mensajería apoyadas también en los beneficios tecnológicos actuales, tanto a nivel de transporte como de información.
 \end{itemize} 
 La siguiente lista resume un flujo común (hoy en día) de adquisición y entrega de un paquete:
 \begin{enumerate}
@@ -96,8 +105,53 @@ La entrega pronta y precisa de los paquetes adquiridos mediante compras en el ex
 \item El comprador esta disponible en la dirección de entrega y recibe el paquete.
 \item El comprador no se encuentra en la dirección de entrega, por lo que el paquete debe ser devuelto de nuevo a la bodega.
 \end{enumerate}
-\item Si el paquete no fue recibido por el comprador, el mismo debe volver a ser ingresado a la bodega.
+\item Si el paquete no fue recibido por el comprador, el mismo debe volver a ser ingresado a la bodega, lo cual permite que el paquete este disponible de nuevo para reiniciar el proceso de entrega.
 \end{enumerate}
+
+Para cada etapa del proceso descrita en este apartado, el sistema genera un registro en el historial de rastreo del paquete. Este registro es simplemente una entrada de datos asociada a un tipo de movimiento que refleja el estado actual del paquete. Dichos estados son:
+\begin{itemize}
+\item \textbf{enBodega}. Es el estado inicial de los paquetes para este subproceso
+\item \textbf{enRuta}. El paquete fue sacado de la bodega, asignado a una ruta y por ende a un mensajero.
+\item \textbf{entregado}. El paquete adquiere este estado cuando se hizo efectiva la entrega al comprador(dueño).
+\item \textbf{noEntregado}. Cuando alguna condicion no esperada provoca que el paquete no fuese entregado.
+\end{itemize}
+El siguiente diagrama de flujo ilustra la parte del proceso que sera formalizada en este trabajo, los registros del historial son generados en los procesos.
+
+\begin{figure}
+\centering
+\begin{tikzpicture}[
+    node distance=2cm,
+    startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30},
+    process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30},
+    io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30},
+    decision/.style={diamond, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!30},
+    ]
+
+    \node (node0) [startstop]                             					{Inicio};
+    \node (node1) [process, align=center, below of=node0]               	{Paquete esta\\en bodega};
+    \node (node2) [decision, align=center, below of=node1,yshift=-1cm]		{Asignable?};     
+    \node (node3) [process, align=center, below of=node2, yshift=-1cm] 		{Asignar ruta,\\mensajero y enviar};
+    \node (node4) [process, align=center, right of=node2, xshift=4.5cm]   	{Mantener\\en bodega};
+    \node (node5) [decision, align=center, below of=node3, yshift=-1cm]		{Entregado?};
+    \node (node6) [process, align=center, below of=node5, yshift=-1cm]		{Registrar\\entrega};
+    \node (node7) [process, align=center, right of=node5, xshift=2cm]   	{Devolver\\a bodega};
+    \node (node8) [startstop, below of=node6, xshift=4cm]					{Fin};
+
+    \draw [arrows=-Stealth] (node0) --node[anchor=east]             {}		(node1);
+    \draw [arrows=-Stealth] (node1) --node[anchor=east]             {}		(node2);
+    \draw [arrows=-Stealth] (node2) --node[anchor=east]             {si}	(node3);
+    \draw [arrows=-Stealth] (node2) --node[anchor=south]            {no}    (node4);
+    \draw [arrows=-Stealth] (node3) --node[anchor=south]            {}		(node5);
+    \draw [arrows=-Stealth] (node5) --node[anchor=east]             {si}	(node6);
+    \draw [arrows=-Stealth] (node5) --node[anchor=south]            {no}    (node7);
+    \path [line, arrows=-Stealth] (node4) |- (node8);
+    \path [line, arrows=-Stealth] (node7) -- (node8);    
+    \path [line, arrows=-Stealth] (node6) |- (node8);
+
+  \end{tikzpicture}
+\caption{\textit{Flujo. Bodegaje y entrega al comprador}} \label{fig:M1}
+\end{figure}
+
 
 \newpage
 \section{Especificación en Z}
@@ -136,6 +190,7 @@ asignado : Paquete \pfun Persona
 \where
 pendienteEntrega = enBodega \cup enRuta \\
 pendienteEntrega = \dom pertenece \\
+entregado \cap pendienteEntrega = \emptyset \\
 enRuta = \dom asignado\\
 mensajero = \ran asignado\\
 comprador = \ran pertenece
