@@ -10,6 +10,7 @@
 \usepackage{fancyhdr}
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows}
+\usetikzlibrary{matrix}
 \usepackage{amssymb}
 
 \tikzstyle{line} = [draw, -latex']
@@ -76,11 +77,11 @@
 \section{Resumen}
 El comercio ha sido una actividad fundamental en la historia de la humanidad y como tal ha evolucionado de acuerdo a las tecnologías disponibles en las diferentes épocas. 
 En el mundo actual se pueden observar fácilmente dos ejes principales en el establecimiento de las relaciones comerciales: 
-\begin{itemize}
+\begin{enumerate}
 \item La comodidad y seguridad que brindan los medios electrónicos de pago para adquirir productos en el exterior a través de sitios web de tipo comercio electrónico (e-commerce)
 \item El traslado de los bienes adquiridos que realizan las empresas de logística y mensajería apoyadas también en los beneficios tecnológicos actuales, tanto a nivel de transporte como de información.
-\end{itemize} 
-La siguiente lista resume un flujo común (hoy en día) de adquisición y entrega de un paquete:
+\end{enumerate}
+Presentamos un trabajo de especificación formal enfocado en modelar parte del proceso que contempla el eje mencionado anteriormente en el punto numero 2. En la siguiente lista se resume un flujo común (hoy en día) de adquisición y entrega de un paquete:
 \begin{enumerate}
 \item La persona que desea adquirir un producto cuenta con lo siguiente:
 \begin{enumerate}
@@ -96,7 +97,9 @@ La siguiente lista resume un flujo común (hoy en día) de adquisición y entreg
 \end{enumerate}
 
 \section{Definición del problema}
-La entrega pronta y precisa de los paquetes adquiridos mediante compras en el exterior. El sistema toma en cuenta la parte del proceso que inicia luego de que el paquete ha sido procesado por la aduana, esto se conoce como tramites de nacionalización y entre otras cosas incluye la revisión de permisos y el cargo de los impuestos de importación. \\Para efectos de este trabajo se denomina dicho subproceso como \textit{Bodegaje y entrega al comprador} y los pasos que comprende son:
+La entrega pronta y precisa de los paquetes adquiridos mediante compras en el exterior. Se toma en cuenta la parte del proceso que inicia luego de que el paquete ha sido procesado por la aduana (tramites de nacionalización).
+\subsection{Bodegaje y entrega al comprador.}
+Para efectos de este trabajo se denomina dicho subproceso como \textit{Bodegaje y entrega al comprador} y los pasos que comprende son:
 \begin{enumerate}
 \item El paquete existe en la bodega de la empresa de mensajería y no esta asignado a alguna ruta para su entrega al comprador.
 \item El paquete es retirado de la bodega, es asignado a un mensajero y puesto en ruta.
@@ -108,19 +111,59 @@ La entrega pronta y precisa de los paquetes adquiridos mediante compras en el ex
 \item Si el paquete no fue recibido por el comprador, el mismo debe volver a ser ingresado a la bodega, lo cual permite que el paquete este disponible de nuevo para reiniciar el proceso de entrega.
 \end{enumerate}
 
-Para cada etapa del proceso descrita en este apartado, el sistema genera un registro en el historial de rastreo del paquete. Este registro es simplemente una entrada de datos asociada a un tipo de movimiento que refleja el estado actual del paquete. Dichos estados son:
-\begin{itemize}
-\item \textbf{enBodega}. Es el estado inicial de los paquetes para este subproceso
-\item \textbf{enRuta}. El paquete fue sacado de la bodega, asignado a una ruta y por ende a un mensajero.
-\item \textbf{entregado}. El paquete adquiere este estado cuando se hizo efectiva la entrega al comprador(dueño).
-\item \textbf{noEntregado}. Cuando alguna condicion no esperada provoca que el paquete no fuese entregado.
-\end{itemize}
+Para cada etapa del proceso descrita en este apartado, el sistema genera un registro en el historial de rastreo del paquete. Este registro es simplemente una entrada de datos asociada a un tipo de movimiento que refleja el estado actual del paquete.\\[\baselineskip]
+\indent La figura 1 brinda una intuición de la posible estructura de un registro de movimiento en el historial. 
+
+\tikzset{ 
+    table/.style={
+        matrix of nodes,
+        row sep=-\pgflinewidth,
+        column sep=-\pgflinewidth,
+        nodes={
+            rectangle,
+            draw=black,
+            align=center
+        },
+        minimum height=1.5em,
+        text depth=0.5ex,
+        text height=2ex,
+        nodes in empty cells,
+%%
+        every even row/.style={
+            nodes={fill=gray!20}
+        },
+        column 1/.style={
+            nodes={text width=2em,font=\bfseries}
+        },
+        row 1/.style={
+            nodes={
+                fill=green!30,
+                text=black,
+                font=\bfseries
+            }
+        }
+    }
+}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\matrix (first) [table,text width=6em]
+{
+  Id  & IdPaq & FechaHora  &  TipoMov  & IdEmp & Notas\\
+  1   & 10023 & dd/mm/yyyy &  enRuta   & E012  & en ruta \\
+};
+\end{tikzpicture}
+\caption{\textit{Registro de evento.}} \label{fig:M1}
+\end{figure}
+
+\subsection{Diagrama de flujo del subproceso.}
 El siguiente diagrama de flujo ilustra la parte del proceso que sera formalizada en este trabajo, los registros del historial son generados en los procesos.
 
-\begin{figure}
+\begin{figure}[h]
 \centering
 \begin{tikzpicture}[
-    node distance=2cm,
+    node distance=1.69cm,
     startstop/.style={rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black, fill=red!30},
     process/.style={rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=orange!30},
     io/.style={trapezium, trapezium left angle=70, trapezium right angle=110, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=blue!30},
@@ -135,7 +178,7 @@ El siguiente diagrama de flujo ilustra la parte del proceso que sera formalizada
     \node (node5) [decision, align=center, below of=node3, yshift=-1cm]		{Entregado?};
     \node (node6) [process, align=center, below of=node5, yshift=-1cm]		{Registrar\\entrega};
     \node (node7) [process, align=center, right of=node5, xshift=2cm]   	{Devolver\\a bodega};
-    \node (node8) [startstop, below of=node6, xshift=4cm]					{Fin};
+    \node (node8) [startstop, below of=node6, xshift=3.7cm]					{Fin};
 
     \draw [arrows=-Stealth] (node0) --node[anchor=east]             {}		(node1);
     \draw [arrows=-Stealth] (node1) --node[anchor=east]             {}		(node2);
@@ -159,10 +202,10 @@ El siguiente diagrama de flujo ilustra la parte del proceso que sera formalizada
 Se presenta una especificación formal en Z para el subproceso denominado en este trabajo como \textit{Bodegaje y entrega al comprador} el cual es parte de un sistema de manejo y entrega de paquetes cuya finalidad es de que sea utilizado por empresas de servicios logística y de mensajería.  
 
 \subsection{Variables globales}
-Se definen los tipos \textit{Paquete} y \textit{Persona} como los conjuntos que se utilizan en esta especificación. 
+Se definen los tipos \textit{Paquete} y \textit{Persona}  como los conjuntos(tipos) que se utilizan en esta especificación. 
 
 \begin{zed}
-[Paquete,~Persona]
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~[Paquete,~Persona]
 \end{zed}
 
 \subsection{Respuestas del sistema}
@@ -172,50 +215,64 @@ Cada operación del sistema debe reportar su resultado mediante un mensaje de re
 \begin{zed}
 Respuesta~~::=~~OK\\
 ~~~~~~|~~paqueteDisponibleParaEntrega\\
-~~~~~~|~~paqueteAlmacenado\\
-~~~~~~|~~paqueteDesalmacenado\\
-~~~~~~|~~paqueteAsignado\\
+~~~~~~|~~paqueteDesalmacenadoAsignado\\
+~~~~~~|~~paqueteEntregadoAComprador\\
+~~~~~~|~~compradorNoDisponibleParaEntrega\\
 \end{zed}
 
-\newpage
+\subsection{Estados del paquete}
+\indent El sistema mantiene también un registro de los eventos generados por los distintos movimientos del paquete, por ejemplo, la asignación del paquete a un mensajero y ruta se considera un evento que debe ser registrado como parte del historial, cada evento generado refleja el estado del paquete luego de su ocurrencia mediante el uso de las siguientes etiquetas:
+
+\begin{zed}
+Evento~~::=~~evBodega\\
+~~~~~~|~~evEnRuta\\
+~~~~~~|~~evEntregaConcretada\\
+~~~~~~|~~evEntregaNoConcretada\\
+~~~~~~|~~evRetraso\\
+\end{zed}
+
 \subsection{Bodegaje y entrega al comprador}
 
-En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encuentran en la bodega, el objetivo final de la empresa de logística y mensajería es entregar el paquete al comprador, para ello debe de fijar una ruta y asignar el paquete a un mensajero, los paquetes que aun están en la bodega y los que ya fueron puestos en ruta están pendientes de entregar a la persona(comprador) pertenecen.
+En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encuentran en la bodega, el objetivo final de la empresa de logística y mensajería es entregar el paquete al comprador, para ello debe de fijar una ruta y asignar el paquete a un mensajero, los paquetes que aun están en la bodega y los que ya fueron puestos en ruta están pendientes de entregar a la persona(comprador) al cual pertenecen.
 
 \begin{schema}{EntregaPaquete}
 enBodega, enRuta, pendienteEntrega, entregado : \power Paquete\\
-comprador, mensajero : \power Persona\\
+comprador, mensajero : \power Persona\\\\
+historial : \power Evento\\
 pertenece : Paquete \pfun Persona\\
-asignado : Paquete \pfun Persona
+asignado : Paquete \pfun Persona\\
+movimiento : Paquete \pfun Evento
 \where
 pendienteEntrega = enBodega \cup enRuta \\
 pendienteEntrega = \dom pertenece \\
 entregado \cap pendienteEntrega = \emptyset \\
+mensajero \neq \emptyset \\
 enRuta = \dom asignado\\
 mensajero = \ran asignado\\
-comprador = \ran pertenece
+comprador = \ran pertenece\\
+historial = \ran movimiento
 \end{schema}
 
 \subsection{Estado inicial}
 
-Inicialmente los paquetes se encuentran en la bodega, no han sido asignados a un mensajero por lo tanto no están asociados a ninguna ruta. El total de paquetes por entregar es igual al de los paquetes que se encuentran en la bodega y el total de entregados corresponde a 0.\\
-El comprador esta definido en el rango de la función pertenece, el mensajero no puede ser especificado ya que aun no esta definido el rango de la función asignado.
+Inicialmente los paquetes se encuentran en la bodega, no han sido asignados a un mensajero por lo tanto no están asociados a ninguna ruta. El total de paquetes por entregar es igual al de los paquetes que se encuentran en la bodega y el total de entregados corresponde a 0. El comprador esta definido en el rango de la función pertenece, el mensajero no puede ser especificado ya que aun no esta definido el rango de la función asignado.
 
 \begin{schema}{InitEntregaPaquete}
 EntregaPaquete'\\
 \where
-enBodega' \neq \emptyset\\
+enBodega' = \dom pertenece'\\
 enRuta' = \emptyset\\
 entregado' = \emptyset\\
 comprador' = \ran pertenece'\\
-pendienteEntrega' = enBodega'
+pendienteEntrega' = enBodega'\\
+historial' = \ran movimiento'
 \end{schema}
 
-\section{Operaciones}
+\subsection{Operaciones}
 
 En esta sección se provee la especificación formal de las operaciones que se implementaran en el modulo de \textit{Bodegaje y entrega al comprador}. Se introducen también algunos diagramas de Venn con la intención de que permitan apreciar con mayor claridad de el estado de los paquetes luego de que una o varias operaciones son ejecutadas.
 
-\subsection{Consultar paquete}
+\subsubsection{Consultar paquete}
 
 Se comprueba que existen paquetes pendientes de entrega en la bodega y que los paquetes requeridos se encuentran actualmente almacenados.
 
@@ -229,49 +286,38 @@ p? \in enBodega\\
 r! = paqueteDisponibleParaEntrega
 \end{schema}
 
-\subsection{Desalmacenar paquete}
+\subsubsection{Desalmacenar paquete y asignar a ruta.}
 
-La operacion $DesalmacenarOK$ permite tomar los paquetes de la bodega con el fin de que estos sean procesados para su entrega. Como resultado de esta operación la clase EntregaPaquete es modificada ya que la cantidad de paquetes en la bodega cambió.
+La operacion \textit{DesalmacenarAsignarRutaOK} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.
 
-\begin{schema}{DesalmacenarOK}
+\begin{schema}{DesalmacenarAsignarRutaOK}
 \Delta EntregaPaquete\\
 p? : Paquete\\
+m? : Persona\\
 r! : Respuesta
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
+m? \in mensajero'\\
 enBodega' = enBodega \setminus \{p?\}\\
-r! =paqueteDesalmacenado
-\end{schema}
-
-\subsection{Asignar paquete}
-
-Una vez que los paquetes son tomados de la bodega estos deben ser asignados a los mensajeros que cubren las rutas que incluyen las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y los mensajeros corresponden al rango de la función \textit asignado. 
-
-\begin{schema}{EnRutaOK}
-\Delta EntregaPaquete\\
-p? : Paquete\\
-r! : Respuesta
-\where
-p? \notin  enBodega\\
 enRuta' = enRuta \cup \{p?\}\\
-mensajero' = \ran asignado\\
-r! = paqueteAsignado
+asignado' = asignado \cup \{p? \mapsto m?\}\\
+r! =paqueteDesalmacenadoAsignado
 \end{schema}
 
-Luego de ejecutadas estas tres operaciones la clase EntregaPaquete ha sido modificada por el movimiento de paquetes desde la bodega hacia la asignacion de rutas, el estado del sistema se puede apreciar en el siguiente diagrama.
+Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \textit{EntregaPaquete} ha sido modificada por el movimiento de paquetes, el estado del sistema se puede apreciar en el siguiente diagrama.
 
-%diagrama
-\begin{center}
+\begin{figure}[h]
+\centering
 \begin{tikzpicture}
 
     \node at (6.72,4.75) {Paquete};
 
     \draw  (-2.5,-1.5)  rectangle (7.5,4.5);
 
-    \draw[] (0.7,1.5) ellipse (3cm and 2.5cm);
-    \draw[] (1.8,1) ellipse (0.75cm and 1.25cm);
-    \draw[] (-0.3,1) ellipse (1cm and 1.5cm);
+    \draw[fill=gray!30] (0.7,1.5) ellipse (3cm and 2.5cm);
+    \draw[fill=white] (1.8,1) ellipse (0.75cm and 1.25cm);
+    \draw[fill=white] (-0.3,1) ellipse (1cm and 1.5cm);
     
     \draw[] (5.7,1.5) ellipse (1.5cm and 2cm);    
     
@@ -280,8 +326,40 @@ Luego de ejecutadas estas tres operaciones la clase EntregaPaquete ha sido modif
     \node at (-0.27,1.3) {enBodega};
     \node at (1.8,1.5) {enRuta};
     
+    \draw [fill] (0.2,2) circle [radius=1.5pt];
+    \draw [fill] (-1,0.75) circle [radius=1.5pt];
+    \draw [fill] (-0.75,0.5) circle [radius=1.5pt];
+    \draw [fill] (-0.5,1) circle [radius=1.5pt];
+    \draw [fill] (-0.5,-0.15) circle [radius=1.5pt];
+
+	\draw [fill, green] (2,4.2) circle [radius=1.5pt];
+    \draw [fill, green] (-2,3.8) circle [radius=1.5pt];
+    \draw [fill, green] (-2,-1.2) circle [radius=1.5pt];
+    \draw [fill, green] (-1.5,-1) circle [radius=1.5pt];
+    \draw [fill, green] (-1.5,3.5) circle [radius=1.5pt];       
+    
+    \draw [fill, blue] (2,0.5) circle [radius=1.5pt]; 
+    \draw[{Circle[red]}-Latex] (0,0.5) -- (1.9,0.5);
+    
 \end{tikzpicture}
-\end{center}
+\caption{\textit{Flujo. Bodegaje y entrega al comprador}} \label{fig:M1}
+\end{figure}
+Dentro del universo de paquetes los puntos de color verde representan los paquetes que aun no han sido ingresados a la bodega. Los puntos de color negro son los paquetes que están actualmente en la bodega. La acción realizada por la operación \textit{DesalmacenarAsignarRutaOK} esta representada por el punto de color rojo y el movimiento que lo convierte en un paquete en ruta indicado por la flecha y el punto de color azul.
+
+\subsubsection{Comprador disponible para entrega de paquete.}
+
+\subsubsection{Comprador no disponible para entrega de paquete.}
+
+\subsubsection{Regresar paquete a bodega.}
+
+\subsection{Interfaz de usuario.}
+
+\section{Resumen de entradas, salidas y respuestas.}
+
+\section{Trabajos futuros.}
+Tanto en el resumen inicial como en la definición del problema se establece que el alcance de este trabajo se limita a un subproceso que forma parte de un sistema mas complejo que envuelve todos los aspectos necesarios para que una compra realizada en el exterior llegue de forma adecuada al comprador.\\[\baselineskip]
+\indent Las posibilidades de trabajos futuros referentes a este tema se pueden abordar tanto desde mejoras a lo que acá se ha presentado, así como, en modelar y formalizar los subprocesos que, fueron mencionados brevemente en el resumen inicial y que anteceden o preceden al flujo desarrollado por los autores de este trabajo.
+
 
 \newpage
 \begin{thebibliography}{00}
