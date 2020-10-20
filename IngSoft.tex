@@ -299,7 +299,8 @@ r! = paqueteDisponibleParaEntrega
 
 \subsubsection{Desalmacenar paquete y asignar a ruta.}
 
-La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.
+La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.\\
+\indent La Figura 3 ilustra el estado de los paquetes previo a la ejecución de esta operación. 
 
 \newpage
 
@@ -417,9 +418,9 @@ r! : ASIGNA
 p? \in enBodega\\
 p? \notin  enRuta\\
 m? \in mensajero'\\
-enBodega' = enBodega \setminus \{p?\}\\
-enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
+enBodega' = enBodega\\
+enRuta' = enRuta\\
+asignado' = asignado
 \end{schema}
 \end{enumerate}
 
@@ -431,54 +432,54 @@ Una vez que el paquete ha sido asignado a un mensajero y por ende puesto en ruta
 \begin{enumerate}
 \item El comprador se encuentra en la dirección de entrega y recibe el paquete.
 
-\begin{schema}{EntregarPaqueteOK}
-\Xi EntregaPaquete\\
-p? : Paquete\\
-m? : Empleado\\
-r! : ASIGNA
-\where
-p? \in enBodega\\
-p? \notin  enRuta\\
-m? \in mensajero'\\
-enBodega' = enBodega \setminus \{p?\}\\
-enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
-\end{schema}
+%\begin{schema}{EntregarPaqueteOK}
+%\Xi EntregaPaquete\\
+%p? : Paquete\\
+%m? : Empleado\\
+%r! : ASIGNA
+%\where
+%p? \in enBodega\\
+%p? \notin  enRuta\\
+%m? \in mensajero'\\
+%enBodega' = enBodega \setminus \{p?\}\\
+%enRuta' = enRuta \cup \{p?\}\\
+%asignado' = asignado \cup \{p? \mapsto m?\}
+%\end{schema}
 
 \item El comprador no esta disponible para la recepción del paquete.
 
-\begin{schema}{EtregarPaqueteFallido}
-\Xi EntregaPaquete\\
-p? : Paquete\\
-m? : Empleado\\
-r! : ASIGNA
-\where
-p? \in enBodega\\
-p? \notin  enRuta\\
-m? \in mensajero'\\
-enBodega' = enBodega \setminus \{p?\}\\
-enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
-\end{schema}
+%\begin{schema}{EtregarPaqueteFallido}
+%\Xi EntregaPaquete\\
+%p? : Paquete\\
+%m? : Empleado\\
+%r! : ASIGNA
+%\where
+%p? \in enBodega\\
+%p? \notin  enRuta\\
+%m? \in mensajero'\\
+%enBodega' = enBodega \setminus \{p?\}\\
+%enRuta' = enRuta \cup \{p?\}\\
+%asignado' = asignado \cup \{p? \mapsto m?\}
+%\end{schema}
 
 \end{enumerate}
 
 \subsubsection{Regresar paquete a bodega.}
 Cuando la entrega del paquete al comprador no concluyo de manera satisfactoria, dicho paquete debe ser de nuevo llevado a la bodega, esta operación modifica el estado del sistema ya que existe un movimiento del paquete (salida de los paquetes que están en ruta y el reingreso a los que están en bodega), también el paquete es desasignado del mensajero. Esta operación preserva la consistencia en el estado del sistema permitiendo que el paquete pueda ser procesado de nuevo en intentos subsiguientes.
 
-\begin{schema}{RegresarBodega}
-\Xi EntregaPaquete\\
-p? : Paquete\\
-m? : Empleado\\
-r! : ASIGNA
-\where
-p? \in enBodega\\
-p? \notin  enRuta\\
-m? \in mensajero'\\
-enBodega' = enBodega \setminus \{p?\}\\
-enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
-\end{schema}
+%\begin{schema}{RegresarBodega}
+%\Xi EntregaPaquete\\
+%p? : Paquete\\
+%m? : Empleado\\
+%r! : ASIGNA
+%\where
+%p? \in enBodega\\
+%p? \notin  enRuta\\
+%m? \in mensajero'\\
+%enBodega' = enBodega \setminus \{p?\}\\
+%enRuta' = enRuta \cup \{p?\}\\
+%asignado' = asignado \cup \{p? \mapsto m?\}
+%\end{schema}
 
 \subsection{Interfaz de usuario.}
 
