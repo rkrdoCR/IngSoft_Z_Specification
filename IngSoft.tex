@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper,zed]{article}
 \usepackage{graphicx}
 \graphicspath{{images/}}
 %\setcounter{secnumdepth}{0}
@@ -26,7 +26,7 @@
 
 %% Comandos
 \renewcommand{\familydefault}{\rmdefault}
-\renewcommand*{\defs}{\mathrel{\hat=}}
+\renewcommand*{\defs}{\mathrel{\widehat{=}}}
 \newcommand*{\LET}{LET}
 \newcommand*{\IF}{\textbf{IF}}
 \newcommand*{\THEN}{\textbf{THEN}}
@@ -111,8 +111,7 @@ Para efectos de este trabajo se denomina dicho subproceso como \textit{Bodegaje 
 \item Si el paquete no fue recibido por el comprador, el mismo debe volver a ser ingresado a la bodega, lo cual permite que el paquete este disponible de nuevo para reiniciar el proceso de entrega.
 \end{enumerate}
 
-Para cada etapa del proceso descrita en este apartado, el sistema genera un registro en el historial de rastreo del paquete. Este registro es simplemente una entrada de datos asociada a un tipo de movimiento que refleja el estado actual del paquete.\\[\baselineskip]
-\indent La figura 1 brinda una intuición de la posible estructura de un registro de movimiento en el historial. 
+Para cada etapa del proceso descrita en este apartado, el sistema genera un registro en el historial de rastreo del paquete. Este registro es simplemente una entrada de datos asociada a un tipo de movimiento que refleja el estado actual del paquete. El manejo del histórico de movimientos del paquete no esta incluido dentro del alcance de este trabajo, sin embargo, se incluye la figura 1 con el objetivo de brindar una intuición de la posible estructura de un registro de movimiento en el historial. 
 
 \tikzset{ 
     table/.style={
@@ -205,7 +204,7 @@ Se presenta una especificación formal en Z para el subproceso denominado en est
 Se definen los tipos \textit{Paquete} y \textit{Persona}  como los conjuntos(tipos) que se utilizan en esta especificación. 
 
 \begin{zed}
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~[Paquete,~Persona]
+~~~~~~~~~~~~~~~~~~~~~~~~[Paquete,~Cliente,~Empleado]
 \end{zed}
 
 \subsection{Respuestas del sistema}
@@ -220,16 +219,31 @@ Respuesta~~::=~~OK\\
 ~~~~~~|~~compradorNoDisponibleParaEntrega\\
 \end{zed}
 
-\subsection{Estados del paquete}
-\indent El sistema mantiene también un registro de los eventos generados por los distintos movimientos del paquete, por ejemplo, la asignación del paquete a un mensajero y ruta se considera un evento que debe ser registrado como parte del historial, cada evento generado refleja el estado del paquete luego de su ocurrencia mediante el uso de las siguientes etiquetas:
+\subsection{Disponibilidad y asignación de mensajeros}
+\indent Para cumplir con el objetivo de que los paquetes lleguen a sus dueños es fundamental la participación de los mensajeros. Con el fin de garantizar un manejo adecuado de la disponibilidad y asignación de de los mensajeros se presenta la siguiente definición libre de tipos:
 
 \begin{zed}
-Evento~~::=~~evBodega\\
-~~~~~~|~~evEnRuta\\
-~~~~~~|~~evEntregaConcretada\\
-~~~~~~|~~evEntregaNoConcretada\\
-~~~~~~|~~evRetraso\\
+ASIGNA~~::=~~asignaOK~|~asignaFallido
 \end{zed}
+
+Esta definición permite crear esquemas que brindan una respuesta robusta a los posibles resultados de la acción de asignar paquetes a un mensajero:
+\begin{itemize}
+\item Hay un mensajero disponible y es posible asignar el paquete.
+\begin{schema}{MensajeroDisponible}
+resultado! : ASIGNA
+\where
+resultado! = asignaOK
+\end{schema}
+
+\item No hay mensajeros disponibles para la ruta de entrega del paquete.
+\begin{schema}{MensajeroNoDisponible}
+resultado! : ASIGNA
+\where
+resultado! = asignaFallido
+\end{schema}
+\end{itemize} 
+
+Se definen estos esquemas con anterioridad ya que serán utilizados posteriormente en la definición de las operaciones del sistema.
 
 \subsection{Bodegaje y entrega al comprador}
 
@@ -237,20 +251,18 @@ En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encue
 
 \begin{schema}{EntregaPaquete}
 enBodega, enRuta, pendienteEntrega, entregado : \power Paquete\\
-comprador, mensajero : \power Persona\\\\
-historial : \power Evento\\
-pertenece : Paquete \pfun Persona\\
-asignado : Paquete \pfun Persona\\
-movimiento : Paquete \pfun Evento
+comprador : \power Cliente\\ 
+mensajero : \power Empleado\\
+pertenece : Paquete \pfun Cliente\\
+asignado : Paquete \pfun Empleado
 \where
 pendienteEntrega = enBodega \cup enRuta \\
 pendienteEntrega = \dom pertenece \\
 entregado \cap pendienteEntrega = \emptyset \\
-mensajero \neq \emptyset \\
+mensajero \subset Empleado \\
 enRuta = \dom asignado\\
 mensajero = \ran asignado\\
-comprador = \ran pertenece\\
-historial = \ran movimiento
+comprador = \ran pertenece
 \end{schema}
 
 \subsection{Estado inicial}
@@ -264,8 +276,7 @@ enBodega' = \dom pertenece'\\
 enRuta' = \emptyset\\
 entregado' = \emptyset\\
 comprador' = \ran pertenece'\\
-pendienteEntrega' = enBodega'\\
-historial' = \ran movimiento'
+pendienteEntrega' = enBodega'
 \end{schema}
 
 \subsection{Operaciones}
@@ -290,19 +301,26 @@ r! = paqueteDisponibleParaEntrega
 
 La operacion \textit{DesalmacenarAsignarRutaOK} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.
 
+\begin{zed}
+DesalmacenarAsignarRutaOK\defs\\
+(DesalmacenarAsignarRutaOK \wedge MensajeroDisponible)
+\vee MensajeroNoDisponible
+\end{zed}
+
+Esta operación garantiza ser robusta ya que se combina con la especificación dada en la sección \textit{Disponibilidad y asignación de mensajeros}.
+
 \begin{schema}{DesalmacenarAsignarRutaOK}
 \Delta EntregaPaquete\\
 p? : Paquete\\
-m? : Persona\\
-r! : Respuesta
+m? : Empleado\\
+r! : ASIGNA
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
 m? \in mensajero'\\
 enBodega' = enBodega \setminus \{p?\}\\
 enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}\\
-r! =paqueteDesalmacenadoAsignado
+asignado' = asignado \cup \{p? \mapsto m?\}
 \end{schema}
 
 Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \textit{EntregaPaquete} ha sido modificada por el movimiento de paquetes, el estado del sistema se puede apreciar en el siguiente diagrama.
