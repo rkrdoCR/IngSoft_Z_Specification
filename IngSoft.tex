@@ -1,17 +1,14 @@
-\documentclass[12pt,a4paper,zed]{article}
+\documentclass[12pt,a4paper]{article}
+\usepackage{zed-csp}
 \usepackage{graphicx}
 \graphicspath{{images/}}
-%\setcounter{secnumdepth}{0}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
-\usepackage{wrapfig}
 \usepackage{float}
-\usepackage{oz, amsfonts}
 \usepackage{fancyhdr}
 \usepackage{tikz}
 \usetikzlibrary{shapes,arrows}
 \usetikzlibrary{matrix}
-\usepackage{amssymb}
 
 \tikzstyle{line} = [draw, -latex']
 
@@ -27,10 +24,6 @@
 %% Comandos
 \renewcommand{\familydefault}{\rmdefault}
 \renewcommand*{\defs}{\mathrel{\widehat{=}}}
-\newcommand*{\LET}{LET}
-\newcommand*{\IF}{\textbf{IF}}
-\newcommand*{\THEN}{\textbf{THEN}}
-\newcommand*{\ELSE}{\textbf{ELSE}}
 
 \title{Entrega de paquetes. Bodegaje y entrega al comprador.\\Especificación en Z.}
 %%
@@ -256,10 +249,9 @@ mensajero : \power Empleado\\
 pertenece : Paquete \pfun Cliente\\
 asignado : Paquete \pfun Empleado
 \where
-pendienteEntrega = enBodega \cup enRuta \\
+\disjoint \langle pendienteEntrega, entregado \rangle\\
+\langle enBodega, enRuta\rangle \partition pendienteEntrega \\
 pendienteEntrega = \dom pertenece \\
-entregado \cap pendienteEntrega = \emptyset \\
-mensajero \subset Empleado \\
 enRuta = \dom asignado\\
 mensajero = \ran asignado\\
 comprador = \ran pertenece
@@ -271,7 +263,9 @@ Inicialmente los paquetes se encuentran en la bodega, no han sido asignados a un
 
 \begin{schema}{InitEntregaPaquete}
 EntregaPaquete'\\
+pertenece? : Paquete \pfun Cliente
 \where
+pertenece' = pertenece?\\
 enBodega' = \dom pertenece'\\
 enRuta' = \emptyset\\
 entregado' = \emptyset\\
@@ -342,11 +336,9 @@ La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la 
 
 \indent El resultado de esta operación esta vinculado a la disponibilidad de los mensajeros y puede arrojar dos resultados diferentes. En este punto es que toman relevancia las respuestas definidas en la sección \textit{Disponibilidad y asignación de mensajeros}.
 
-\begin{zed}
-DesalmacenarAsignarRuta\defs\\
-\t3 (DesalmacenarAsignarRuta \wedge MensajeroDisponible)\\
-\t3 \vee ~MensajeroNoDisponible
-\end{zed}
+\[ RDesalmacenarAsignarRuta \defs\\ 
+\t3 (DesalmacenarAsignarRutaOK \wedge MensajeroDisponible)\\ 
+\t3 \lor (DesalmacenarAsignarRutaFallida \wedge MensajeroNoDisponible) \]
 
 La operación garantiza ser robusta ya que se combina con la especificación \textit{ASIGNA}. Los dos resultados posibles son:
 \begin{enumerate}
@@ -360,7 +352,7 @@ r! : ASIGNA
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
-m? \in mensajero'\\
+m? \in mensajero \setminus \{\ran asignado\}\\
 enBodega' = enBodega \setminus \{p?\}\\
 enRuta' = enRuta \cup \{p?\}\\
 asignado' = asignado \cup \{p? \mapsto m?\}
@@ -409,7 +401,7 @@ Dentro del universo de paquetes los puntos de color verde representan los paquet
 
 \item El paquete no se pudo asignar a un mensajero.
 
-\begin{schema}{RDesalmacenarAsignarRutaFallida}
+\begin{schema}{DesalmacenarAsignarRutaFallida}
 \Xi EntregaPaquete\\
 p? : Paquete\\
 m? : Empleado\\
@@ -417,7 +409,7 @@ r! : ASIGNA
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
-m? \in mensajero'\\
+m? \in mensajero\\
 enBodega' = enBodega\\
 enRuta' = enRuta\\
 asignado' = asignado
