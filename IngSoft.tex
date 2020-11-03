@@ -10,6 +10,9 @@
 \usetikzlibrary{shapes,arrows}
 \usetikzlibrary{matrix}
 
+\usepackage{multirow}
+\usepackage{hhline}
+
 \tikzstyle{line} = [draw, -latex']
 
 \usetikzlibrary{arrows.meta,
@@ -202,21 +205,20 @@ Se definen los tipos \textit{Paquete} y \textit{Persona}  como los conjuntos(tip
 
 \subsection{Respuestas del sistema}
 
-Cada operación del sistema debe reportar su resultado mediante un mensaje de respuesta que informe al usuario acerca del estado actual del proceso.
+Cada operación del sistema debe reportar su resultado mediante un mensaje de respuesta que informe al usuario acerca del estado actual del proceso. Las siguientes respuestas son utilizadas en métodos que no presentan condiciones de falla, otras operaciones, por el contrario, son definidas como robustas mas adelante en esta especificación.
 
 \begin{zed}
 Respuesta~~::=~~OK\\
 ~~~~~~|~~paqueteDisponibleParaEntrega\\
-~~~~~~|~~paqueteDesalmacenadoAsignado\\
-~~~~~~|~~paqueteEntregadoAComprador\\
-~~~~~~|~~compradorNoDisponibleParaEntrega\\
+~~~~~~|~~paqueteAlmacenado\\
 \end{zed}
 
 \subsection{Disponibilidad y asignación de mensajeros}
 \indent Para cumplir con el objetivo de que los paquetes lleguen a sus dueños es fundamental la participación de los mensajeros. Con el fin de garantizar un manejo adecuado de la disponibilidad y asignación de de los mensajeros se presenta la siguiente definición libre de tipos:
 
 \begin{zed}
-ASIGNA~~::=~~asignaOK~|~asignaFallido
+ASIGNA~~::=~~asignaOK\\
+~~~~~~|~~asignaFallido
 \end{zed}
 
 Esta definición permite crear esquemas que brindan una respuesta robusta a los posibles resultados de la acción de asignar paquetes a un mensajero:
@@ -385,11 +387,11 @@ Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \tex
     \draw [fill] (-0.5,1) circle [radius=1.5pt];
     \draw [fill] (-0.5,-0.15) circle [radius=1.5pt];
 
-	\draw [fill, green] (2,4.2) circle [radius=1.5pt];
-    \draw [fill, green] (-2,3.8) circle [radius=1.5pt];
-    \draw [fill, green] (-2,-1.2) circle [radius=1.5pt];
-    \draw [fill, green] (-1.5,-1) circle [radius=1.5pt];
-    \draw [fill, green] (-1.5,3.5) circle [radius=1.5pt];       
+	\draw [fill, brown] (2,4.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,3.8) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,-1.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,-1) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,3.5) circle [radius=1.5pt];       
     
     \draw [fill, blue] (2,0.5) circle [radius=1.5pt]; 
     \draw[{Circle[red]}-Latex] (0,0.5) -- (1.9,0.5);
@@ -397,6 +399,7 @@ Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \tex
 \end{tikzpicture}
 \caption{\textit{Desalmacenaje y asignación a ruta}} \label{fig:M1}
 \end{figure}
+
 Dentro del universo de paquetes los puntos de color verde representan los paquetes que aun no han sido ingresados a la bodega. Los puntos de color negro son los paquetes que están actualmente en la bodega. La acción realizada por la operación \textit{DesalmacenarAsignarRutaOK} esta representada por el punto de color rojo y el movimiento que lo convierte en un paquete en ruta indicado por la flecha y el punto de color azul.
 
 \item El paquete no se pudo asignar a un mensajero.
@@ -409,7 +412,7 @@ r! : ASIGNA
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
-m? \in mensajero\\
+m? \notin mensajero \setminus \{\ran asignado\}\\
 enBodega' = enBodega\\
 enRuta' = enRuta\\
 asignado' = asignado
@@ -419,64 +422,203 @@ asignado' = asignado
 En este escenario el estado del sistema es igual al estado previo (ver Figura 3) ya que la operación no concluyo satisfactoriamente. Preservar este estado es importante ya que esto permite que el paquete este disponible de nuevo para ser asignado y puesto en ruta en intentos subsiguientes.
 
 \subsubsection{Entrega del paquete al comprador.}
-Una vez que el paquete ha sido asignado a un mensajero y por ende puesto en ruta el mensajero se dirige a la dirección de entrega para intentar hacer efectivo el recibo por parte del comprador. Los dos posibles escenarios que el sistema maneja son:
+Una vez que el paquete ha sido asignado a un mensajero y por ende puesto en ruta el mensajero se dirige a la dirección de entrega para intentar hacer efectivo el recibo del paquete por parte del comprador. Los dos posibles escenarios que el sistema maneja son:
+
+\begin{zed}
+ENTREGA~~::=~~entregaOK\\
+~~~~~~|~~entregaFallida
+\end{zed}
 
 \begin{enumerate}
 \item El comprador se encuentra en la dirección de entrega y recibe el paquete.
 
-%\begin{schema}{EntregarPaqueteOK}
-%\Xi EntregaPaquete\\
-%p? : Paquete\\
-%m? : Empleado\\
-%r! : ASIGNA
-%\where
-%p? \in enBodega\\
-%p? \notin  enRuta\\
-%m? \in mensajero'\\
-%enBodega' = enBodega \setminus \{p?\}\\
-%enRuta' = enRuta \cup \{p?\}\\
-%asignado' = asignado \cup \{p? \mapsto m?\}
-%\end{schema}
+\begin{schema}{EntregaCompletada}
+resultado! : ENTREGA
+\where
+resultado! = entregaOK
+\end{schema}
 
 \item El comprador no esta disponible para la recepción del paquete.
 
-%\begin{schema}{EtregarPaqueteFallido}
-%\Xi EntregaPaquete\\
-%p? : Paquete\\
-%m? : Empleado\\
-%r! : ASIGNA
-%\where
-%p? \in enBodega\\
-%p? \notin  enRuta\\
-%m? \in mensajero'\\
-%enBodega' = enBodega \setminus \{p?\}\\
-%enRuta' = enRuta \cup \{p?\}\\
-%asignado' = asignado \cup \{p? \mapsto m?\}
-%\end{schema}
+\begin{schema}{EntregaFallida}
+resultado! : ENTREGA
+\where
+resultado! = entregaFallida
+\end{schema}
+
+Estos esquemas permiten construir una operación robusta que cubre tanto el caso en el que el paquete se entrego con éxito, así como, el caso en el que el paquete no pudo ser entregado al comprador.
+
+\[ REntregarPaquete \defs\\ 
+\t3 (EntregarPaqueteOK \wedge EntregaCompletada)\\ 
+\t3 \lor (EtregarPaqueteFallido \wedge EntregaFallida) \]
+
+\newpage
+\subsubsection*{Entrega completada.}
+Cuando el comprador recibe el paquete el sistema refleja el cambio moviendo el paquete de pendiente entrega a entregado, esto implica que el mismo ya no esta en ruta y es por ende desasignado al mensajero.
+
+\begin{schema}{EntregarPaqueteOK}
+\Delta EntregaPaquete\\
+p? : Paquete\\
+m? : Empleado\\
+r! : ASIGNA
+\where
+p? \notin  enRuta\\
+m? \in mensajero'\\
+entregado' = entregado \cup \{p?\}\\
+enRuta' = enRuta \setminus \{p?\}\\
+asignado' = asignado \setminus \{p? \mapsto m?\}
+\end{schema}
+
+En el siguente diagrama se puede apreciar el estado del sistema luego de que esta operación se completo de manera satisfactoria.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+
+    \node at (6.72,4.75) {Paquete};
+
+    \draw  (-2.5,-1.5)  rectangle (7.5,4.5);
+
+    \draw[fill=gray!30] (0.7,1.5) ellipse (3cm and 2.5cm);
+    \draw[fill=white] (1.8,1) ellipse (0.75cm and 1.25cm);
+    \draw[fill=white] (-0.3,1) ellipse (1cm and 1.5cm);
+    
+    \draw[] (5.7,1.5) ellipse (1.5cm and 2cm);    
+    
+    \node at (5.7,2.5) {entregado};
+    \node at (0.5,3) {pendienteEntrega};
+    \node at (-0.27,1.3) {enBodega};
+    \node at (1.8,1.5) {enRuta};
+    
+    \draw [fill] (0.2,2) circle [radius=1.5pt];
+    \draw [fill] (-1,0.75) circle [radius=1.5pt];
+    \draw [fill] (-0.75,0.5) circle [radius=1.5pt];
+    \draw [fill] (-0.5,1) circle [radius=1.5pt];
+    \draw [fill] (-0.5,-0.15) circle [radius=1.5pt];
+
+	\draw [fill, brown] (2,4.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,3.8) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,-1.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,-1) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,3.5) circle [radius=1.5pt];       
+    
+    \draw [fill, blue] (1.75,1) circle [radius=1.5pt]; 
+    \draw [fill, green] (5,1.5) circle [radius=1.5pt]; 
+    \draw[{Circle[blue]}-Latex] (2,0.5) -- (4.9,1.47);
+    
+\end{tikzpicture}
+\caption{\textit{Entrega completada satisfactoriamente.}} \label{fig:M1}
+\end{figure}
+
+En este estado final del sistema se puede observar que la entrega del paquete ocasiona que el mismo, ilustrado en azul, pase a ser parte del conjunto de los entregados.
+
+\subsubsection*{Entrega fallida.}
+Por el contrario, si el paquete no pudo entregarse al comprador el mismo debe de mantenerse asignado al mensajero hasta que este sea devuelto a la bodega, por lo que el sistema mantiene el paquete en ruta pero cambia la respuesta obtenida en la operación.
+
+\begin{schema}{EtregarPaqueteFallido}
+\Xi EntregaPaquete\\
+p? : Paquete\\
+m? : Empleado\\
+r! : ASIGNA
+\where
+p? \notin  enRuta\\
+m? \in mensajero'\\
+enBodega' = enBodega \setminus \{p?\}\\
+enRuta' = enRuta \cup \{p?\}\\
+asignado' = asignado \cup \{p? \mapsto m?\}
+\end{schema}
 
 \end{enumerate}
 
 \subsubsection{Regresar paquete a bodega.}
 Cuando la entrega del paquete al comprador no concluyo de manera satisfactoria, dicho paquete debe ser de nuevo llevado a la bodega, esta operación modifica el estado del sistema ya que existe un movimiento del paquete (salida de los paquetes que están en ruta y el reingreso a los que están en bodega), también el paquete es desasignado del mensajero. Esta operación preserva la consistencia en el estado del sistema permitiendo que el paquete pueda ser procesado de nuevo en intentos subsiguientes.
 
-%\begin{schema}{RegresarBodega}
-%\Xi EntregaPaquete\\
-%p? : Paquete\\
-%m? : Empleado\\
-%r! : ASIGNA
-%\where
-%p? \in enBodega\\
-%p? \notin  enRuta\\
-%m? \in mensajero'\\
-%enBodega' = enBodega \setminus \{p?\}\\
-%enRuta' = enRuta \cup \{p?\}\\
-%asignado' = asignado \cup \{p? \mapsto m?\}
-%\end{schema}
+\begin{schema}{RegresarBodega}
+\Xi EntregaPaquete\\
+p? : Paquete\\
+m? : Empleado\\
+r! : ASIGNA
+\where
+p? \in enBodega\\
+p? \notin  enRuta\\
+m? \in mensajero'\\
+enBodega' = enBodega \setminus \{p?\}\\
+enRuta' = enRuta \cup \{p?\}\\
+asignado' = asignado \cup \{p? \mapsto m?\}
+\end{schema}
 
-\subsection{Interfaz de usuario.}
+Este esquema representa el otro posible estado final del sistema. La representación gráfica del mismo se muestra a continuación. 
 
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+
+    \node at (6.72,4.75) {Paquete};
+
+    \draw  (-2.5,-1.5)  rectangle (7.5,4.5);
+
+    \draw[fill=gray!30] (0.7,1.5) ellipse (3cm and 2.5cm);
+    \draw[fill=white] (1.8,1) ellipse (0.75cm and 1.25cm);
+    \draw[fill=white] (-0.3,1) ellipse (1cm and 1.5cm);
+    
+    \draw[] (5.7,1.5) ellipse (1.5cm and 2cm);    
+    
+    \node at (5.7,2.5) {entregado};
+    \node at (0.5,3) {pendienteEntrega};
+    \node at (-0.27,1.3) {enBodega};
+    \node at (1.8,1.5) {enRuta};
+    
+    \draw [fill] (0.2,2) circle [radius=1.5pt];
+    \draw [fill] (-1,0.75) circle [radius=1.5pt];
+    \draw [fill] (-0.75,0.5) circle [radius=1.5pt];
+    \draw [fill] (-0.5,1) circle [radius=1.5pt];
+    \draw [fill] (-0.5,-0.15) circle [radius=1.5pt];
+
+	\draw [fill, brown] (2,4.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,3.8) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,-1.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,-1) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,3.5) circle [radius=1.5pt];       
+    
+    \draw [fill, red] (0,0.5) circle [radius=1.5pt]; 
+    \draw[{Circle[blue]}-Latex] (2,0.5) -- (0.1,0.5);
+    
+\end{tikzpicture}
+\caption{\textit{Regresar paquete a bodega.}} \label{fig:M1}
+\end{figure}
+
+\newpage
 \section{Resumen de entradas, salidas y respuestas.}
+En esta sección se presenta un resumen de las operaciones del sistema, sus entradas, el subcaso que cubre cada una y el cambio que provocan, así como las respuestas para cada escenario.
 
+\subsection{Cuando la entrada es un paquete.}
+El cuadro que se presenta a continuacion resume el funcionamiento del sistema para cuando la entrada es de tipo \textit{Paquete}.
+
+\begin{table}[htp]
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Operación} & \textbf{Entrada} & \textbf{Caso} & \textbf{Estado} & \textbf{Respuesta} \\[10pt]
+\hline
+ConsultarPaquete & Paquete & NA & enBodega & paqueteDisponibleParaEntrega \\[20pt]
+\hline
+\multirow{2}{*}{\vtop{\hbox{\strut RDesalmacenar-}\hbox{\strut AsignarRuta}}} & Paquete & Exitoso & enRuta & asignaOK \\[20pt]
+\cline{3-5} & & Fallido & enBodega & asignaFallido \\[20pt]
+\hline   
+\multirow{2}{*}{REntregarPaquete} & Paquete & Exitoso & entregado & entregaCompletada \\ [20pt]
+\cline{3-5} & & Fallido & enRuta & entregaFallida \\[20pt]
+\hline 
+RegresarBodega & Paquete & NA & enBodega & paqueteAlmacenado \\[20pt]
+\hline
+\end{tabular}
+\caption{\textit{Cuadro resumen. Entrada es un paquete.}} \label{fig:M1}
+\end{center}
+\end{table}
+
+\subsection{Cuando la entrada es un mensajero}
+En el caso de los mensajeros, como consecuencia de la asignación de los paquetes pueden presentar dos estados a saber: \textit{asignado o disponible}. Este trabajo esta centrado en el flujo que describe el movimiento de los paquetes por lo que el tema de la asignación de los mensajeros esta definido en función de los paquetes y se manejan como respuestas (ver sección 3.3).
+
+\newpage
 \section{Trabajos futuros.}
 Tanto en el resumen inicial como en la definición del problema se establece que el alcance de este trabajo se limita a un subproceso que forma parte de un sistema mas complejo que envuelve todos los aspectos necesarios para que una compra realizada en el exterior llegue de forma adecuada al comprador.\\[\baselineskip]
 \indent Las posibilidades de trabajos futuros referentes a este tema se pueden abordar tanto desde mejoras a lo que acá se ha presentado, así como, en modelar y formalizar los subprocesos que, fueron mencionados brevemente en el resumen inicial y que anteceden o preceden al flujo desarrollado por los autores de este trabajo.
