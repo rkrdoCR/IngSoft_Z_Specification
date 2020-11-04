@@ -12,6 +12,8 @@
 
 \usepackage{multirow}
 \usepackage{hhline}
+\usepackage{float}
+\usepackage{array}
 
 \tikzstyle{line} = [draw, -latex']
 
@@ -197,7 +199,7 @@ El siguiente diagrama de flujo ilustra la parte del proceso que sera formalizada
 Se presenta una especificación formal en Z para el subproceso denominado en este trabajo como \textit{Bodegaje y entrega al comprador} el cual es parte de un sistema de manejo y entrega de paquetes cuya finalidad es de que sea utilizado por empresas de servicios logística y de mensajería.  
 
 \subsection{Variables globales}
-Se definen los tipos \textit{Paquete} y \textit{Persona}  como los conjuntos(tipos) que se utilizan en esta especificación. 
+Se definen los tipos \textit{Paquete}, \textit{Cliente} y \textit{Empleado}  como los conjuntos(tipos) que se utilizan en esta especificación. 
 
 \begin{zed}
 ~~~~~~~~~~~~~~~~~~~~~~~~[Paquete,~Cliente,~Empleado]
@@ -213,8 +215,27 @@ Respuesta~~::=~~OK\\
 ~~~~~~|~~paqueteAlmacenado\\
 \end{zed}
 
-\subsection{Disponibilidad y asignación de mensajeros}
-\indent Para cumplir con el objetivo de que los paquetes lleguen a sus dueños es fundamental la participación de los mensajeros. Con el fin de garantizar un manejo adecuado de la disponibilidad y asignación de de los mensajeros se presenta la siguiente definición libre de tipos:
+\subsection{Mensajeros. Disponibilidad y asignación.}
+\indent Los empleados son catalogados por tipos. Para cumplir con el objetivo de que los paquetes lleguen a sus dueños es fundamental la participación de los mensajeros, que son el único tipo de empleado participante del proceso.
+
+\subsubsection{Tipo Mensajero.}
+Las empresas de logística y mensajería cuentan con diferentes roles que le son asignados a sus empleados de acuerdo al puesto. Estos roles son modelados como etiquetas, para efectos del subproceso a formalizar solo se necesita especificar el rol de tipo mensajero.
+
+\begin{zed}
+Rol~~::=~~TMensajero
+\end{zed}
+
+La clase mensajero representa de manera única a este tipo de empleados y se define a continuación.
+
+\begin{schema}{Mensajero}
+mensajero : Empleado\\
+tipo : Rol
+\where
+mensajero \in \{e : Empleado | tipo = TMensajero \spot e\}
+\end{schema}
+
+\subsubsection{Disponibilidad y asignación.}
+Con el fin de garantizar un manejo adecuado de la disponibilidad y asignación de de los mensajeros se presenta la siguiente definición libre de tipos:
 
 \begin{zed}
 ASIGNA~~::=~~asignaOK\\
@@ -247,9 +268,9 @@ En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encue
 \begin{schema}{EntregaPaquete}
 enBodega, enRuta, pendienteEntrega, entregado : \power Paquete\\
 comprador : \power Cliente\\ 
-mensajero : \power Empleado\\
+mensajero : \power Mensajero\\
 pertenece : Paquete \pfun Cliente\\
-asignado : Paquete \pfun Empleado
+asignado : Paquete \pfun Mensajero
 \where
 \disjoint \langle pendienteEntrega, entregado \rangle\\
 \langle enBodega, enRuta\rangle \partition pendienteEntrega \\
@@ -295,12 +316,9 @@ r! = paqueteDisponibleParaEntrega
 
 \subsubsection{Desalmacenar paquete y asignar a ruta.}
 
-La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.\\
-\indent La Figura 3 ilustra el estado de los paquetes previo a la ejecución de esta operación. 
+La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.
 
-\newpage
-
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 
@@ -326,11 +344,11 @@ La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la 
     \draw [fill] (-0.5,-0.15) circle [radius=1.5pt];
     \draw [fill] (0,0.5) circle [radius=1.5pt];
 
-	\draw [fill, green] (2,4.2) circle [radius=1.5pt];
-    \draw [fill, green] (-2,3.8) circle [radius=1.5pt];
-    \draw [fill, green] (-2,-1.2) circle [radius=1.5pt];
-    \draw [fill, green] (-1.5,-1) circle [radius=1.5pt];
-    \draw [fill, green] (-1.5,3.5) circle [radius=1.5pt];    
+	\draw [fill, brown] (2,4.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,3.8) circle [radius=1.5pt];
+    \draw [fill, brown] (-2,-1.2) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,-1) circle [radius=1.5pt];
+    \draw [fill, brown] (-1.5,3.5) circle [radius=1.5pt];    
     
 \end{tikzpicture}
 \caption{\textit{Estado previo}} \label{fig:M1}
@@ -342,27 +360,29 @@ La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la 
 \t3 (DesalmacenarAsignarRutaOK \wedge MensajeroDisponible)\\ 
 \t3 \lor (DesalmacenarAsignarRutaFallida \wedge MensajeroNoDisponible) \]
 
-La operación garantiza ser robusta ya que se combina con la especificación \textit{ASIGNA}. Los dos resultados posibles son:
+La operación garantiza ser robusta ya que se combina con la especificación \textit{ASIGNA} y cubre las dos posibles salidas.
 \begin{enumerate}
 \item La operación concluye satisfactoriamente.
 
 \begin{schema}{DesalmacenarAsignarRutaOK}
 \Delta EntregaPaquete\\
 p? : Paquete\\
-m? : Empleado\\
+m? : Mensajero\\
 r! : ASIGNA
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
-m? \in mensajero \setminus \{\ran asignado\}\\
+m? \in mensajero \setminus \ran asignado\\
 enBodega' = enBodega \setminus \{p?\}\\
 enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
+asignado' = asignado \cup \{p? \mapsto m?\}\\
+comprador' = comprador\\
+pertenece' = pertenece
 \end{schema}
 
 Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \textit{EntregaPaquete} ha sido modificada por el movimiento de paquetes, el estado del sistema se puede apreciar en el siguiente diagrama.
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 
@@ -400,27 +420,30 @@ Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \tex
 \caption{\textit{Desalmacenaje y asignación a ruta}} \label{fig:M1}
 \end{figure}
 
-Dentro del universo de paquetes los puntos de color verde representan los paquetes que aun no han sido ingresados a la bodega. Los puntos de color negro son los paquetes que están actualmente en la bodega. La acción realizada por la operación \textit{DesalmacenarAsignarRutaOK} esta representada por el punto de color rojo y el movimiento que lo convierte en un paquete en ruta indicado por la flecha y el punto de color azul.
+Dentro del universo de paquetes los puntos color café representan los paquetes que aun no han sido ingresados a la bodega. Los puntos de color negro son los paquetes que están actualmente en la bodega. La acción realizada por la operación \textit{DesalmacenarAsignarRutaOK} esta representada por el punto de color rojo y el movimiento que lo convierte en un paquete en ruta indicado por la flecha y el punto de color azul.
 
-\item El paquete no se pudo asignar a un mensajero.
+\item El paquete no se pudo asignar a un mensajero. Las posibles causas de este resultado van desde que el horario de entregas del mensajero ya esta lleno(no hay capacidad de entrega restante) hasta que la dirección de entrega del paquete no calza con la ruta trazada para el ese día.
 
 \begin{schema}{DesalmacenarAsignarRutaFallida}
 \Xi EntregaPaquete\\
 p? : Paquete\\
-m? : Empleado\\
+m? : Mensajero\\
 r! : ASIGNA
 \where
 p? \in enBodega\\
 p? \notin  enRuta\\
-m? \notin mensajero \setminus \{\ran asignado\}\\
+m? \in mensajero \setminus \ran asignado\\
 enBodega' = enBodega\\
 enRuta' = enRuta\\
-asignado' = asignado
+asignado' = asignado\\
+comprador' = comprador\\
+pertenece' = pertenece
 \end{schema}
 \end{enumerate}
 
-En este escenario el estado del sistema es igual al estado previo (ver Figura 3) ya que la operación no concluyo satisfactoriamente. Preservar este estado es importante ya que esto permite que el paquete este disponible de nuevo para ser asignado y puesto en ruta en intentos subsiguientes.
+En este caso la salida de la operación es \textit{AsignaFallido}, el estado del sistema es igual al estado previo(ver Figura 3) ya que la operación no concluyo satisfactoriamente. Preservar este estado es importante ya que esto permite que el paquete este disponible de nuevo para ser asignado y puesto en ruta en intentos subsiguientes.
 
+\newpage
 \subsubsection{Entrega del paquete al comprador.}
 Una vez que el paquete ha sido asignado a un mensajero y por ende puesto en ruta el mensajero se dirige a la dirección de entrega para intentar hacer efectivo el recibo del paquete por parte del comprador. Los dos posibles escenarios que el sistema maneja son:
 
@@ -459,17 +482,20 @@ Cuando el comprador recibe el paquete el sistema refleja el cambio moviendo el p
 \begin{schema}{EntregarPaqueteOK}
 \Delta EntregaPaquete\\
 p? : Paquete\\
-m? : Empleado\\
-r! : ASIGNA
+m? : Mensajero\\
+c? : Cliente\\
+r! : ENTREGA
 \where
-p? \notin  enRuta\\
-m? \in mensajero'\\
+p? \in  enRuta\\
+p? \in \dom asignado\\
+c? \in \ran pertenece\\
 entregado' = entregado \cup \{p?\}\\
 enRuta' = enRuta \setminus \{p?\}\\
-asignado' = asignado \setminus \{p? \mapsto m?\}
+asignado' = asignado \setminus \{p? \mapsto m?\}\\
+pertenece' = pertenece \setminus \{p? \mapsto c?\}
 \end{schema}
 
-En el siguente diagrama se puede apreciar el estado del sistema luego de que esta operación se completo de manera satisfactoria.
+En el siguiente diagrama se puede apreciar el estado del sistema luego de que esta operación se completo de manera satisfactoria.
 
 \begin{figure}[h]
 \centering
@@ -518,33 +544,39 @@ Por el contrario, si el paquete no pudo entregarse al comprador el mismo debe de
 \begin{schema}{EtregarPaqueteFallido}
 \Xi EntregaPaquete\\
 p? : Paquete\\
-m? : Empleado\\
-r! : ASIGNA
+m? : Mensajero\\
+c? : Cliente\\
+r! : ENTREGA
 \where
-p? \notin  enRuta\\
-m? \in mensajero'\\
-enBodega' = enBodega \setminus \{p?\}\\
-enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
+p? \in  enRuta\\
+p? \in \dom asignado\\
+c? \in \ran pertenece\\
+enRuta' = enRuta\\
+asignado' = asignado\\
+entregado' = entregado\\
+pertenece' = pertenece
 \end{schema}
 
 \end{enumerate}
+
 
 \subsubsection{Regresar paquete a bodega.}
 Cuando la entrega del paquete al comprador no concluyo de manera satisfactoria, dicho paquete debe ser de nuevo llevado a la bodega, esta operación modifica el estado del sistema ya que existe un movimiento del paquete (salida de los paquetes que están en ruta y el reingreso a los que están en bodega), también el paquete es desasignado del mensajero. Esta operación preserva la consistencia en el estado del sistema permitiendo que el paquete pueda ser procesado de nuevo en intentos subsiguientes.
 
 \begin{schema}{RegresarBodega}
-\Xi EntregaPaquete\\
+\Delta EntregaPaquete\\
 p? : Paquete\\
-m? : Empleado\\
-r! : ASIGNA
+m? : Mensajero\\
+r! : Respuesta
 \where
-p? \in enBodega\\
-p? \notin  enRuta\\
-m? \in mensajero'\\
-enBodega' = enBodega \setminus \{p?\}\\
-enRuta' = enRuta \cup \{p?\}\\
-asignado' = asignado \cup \{p? \mapsto m?\}
+p? \notin enBodega\\
+p? \in  enRuta\\
+m? \in mensajero \setminus \ran asignado\\
+enRuta' = enRuta \setminus \{p?\}\\
+asignado' = asignado \setminus \{p? \mapsto m?\}\\
+enBodega' = enBodega \cup \{p?\}\\
+pertenece' = pertenece\\
+entregado' = entregado
 \end{schema}
 
 Este esquema representa el otro posible estado final del sistema. La representación gráfica del mismo se muestra a continuación. 
@@ -594,13 +626,13 @@ En esta sección se presenta un resumen de las operaciones del sistema, sus entr
 \subsection{Cuando la entrada es un paquete.}
 El cuadro que se presenta a continuacion resume el funcionamiento del sistema para cuando la entrada es de tipo \textit{Paquete}.
 
-\begin{table}[htp]
+\begin{table}[H]
 \begin{center}
-\begin{tabular}{|c|c|c|c|c|}
+\begin{tabular}{|l|l|l|l|l|}
 \hline
 \textbf{Operación} & \textbf{Entrada} & \textbf{Caso} & \textbf{Estado} & \textbf{Respuesta} \\[10pt]
 \hline
-ConsultarPaquete & Paquete & NA & enBodega & paqueteDisponibleParaEntrega \\[20pt]
+ConsultarPaquete & Paquete & NA & enBodega & \vtop{\hbox{\strut paqueteDisponible-}\hbox{\strut ParaEntrega}} \\[20pt]
 \hline
 \multirow{2}{*}{\vtop{\hbox{\strut RDesalmacenar-}\hbox{\strut AsignarRuta}}} & Paquete & Exitoso & enRuta & asignaOK \\[20pt]
 \cline{3-5} & & Fallido & enBodega & asignaFallido \\[20pt]
@@ -611,7 +643,7 @@ ConsultarPaquete & Paquete & NA & enBodega & paqueteDisponibleParaEntrega \\[20p
 RegresarBodega & Paquete & NA & enBodega & paqueteAlmacenado \\[20pt]
 \hline
 \end{tabular}
-\caption{\textit{Cuadro resumen. Entrada es un paquete.}} \label{fig:M1}
+\caption{\textit{Cuando la entrada es un paquete.}} \label{fig:M1}
 \end{center}
 \end{table}
 
@@ -630,7 +662,10 @@ Tanto en el resumen inicial como en la definición del problema se establece que
 \bibitem{b1} The Z notation: A reference Manual, J.M . Spivey, 2nd Edition, 1998.
 \bibitem{b2} Ingeniería de Software, Referencias varias, Prof.Ignacio Trejos Zelaya, ITCR.2014. \url{https://tecdigital.tec.ac.cr/dotlrn/classes/MC/MC7204/S-2-2018.SJ.MC7204.40/file-storage/#/58119055}
 \bibitem{b3} Fuzz Manual, J.M. Spivey, 2nd Edition, Oxford, England, 2000.
-%\bibitem{b4} Instalación de Fuzz, verificador de Z en MacOS, Christopher Jiménez, ITCR, 2018 URL \url{https://tecdigital.tec.ac.cr/dotlrn/classes/MC/MC7204/S-2-2018.SJ.MC7204.40/file-storage/#/59221405}
+\bibitem{b4} A guide to the zed style option, Spivey, Mike, 1990.
+\bibitem{b5} Formal Specification Using Z: A Modelling Approach, L. Bottaci J. Jones, 1996.
+
+
 \end{thebibliography}
 
 \end{document}
