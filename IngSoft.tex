@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper]{article}
+\documentclass[12pt,a4paper,table]{article}
 \usepackage{zed-csp}
 \usepackage{graphicx}
 \graphicspath{{images/}}
@@ -13,7 +13,9 @@
 \usepackage{multirow}
 \usepackage{hhline}
 \usepackage{float}
-\usepackage{array}
+\usepackage{array, makecell}
+\usepackage{xcolor}
+\setcellgapes{12pt}
 
 \tikzstyle{line} = [draw, -latex']
 
@@ -234,7 +236,7 @@ tipo = TMensajero
 \end{schema}
 
 \subsubsection{Disponibilidad y asignación.}
-Como se menciona al inicio de esta sección es importante cubrir las posibles salidas del proceso de asignación, con el fin de garantizar que el sistema hace un manejo correcto de la disponibilidad y asignación de de los mensajeros se presenta la siguiente definición libre de tipos:
+Como se menciona al inicio de esta sección es importante cubrir las posibles salidas del proceso de asignación, con el fin de garantizar que el sistema hace un manejo correcto de la disponibilidad y asignación de los mensajeros se presenta la siguiente definición libre de tipos:
 
 \begin{zed}
 ASIGNA~~::=~~asignaExitoso\\
@@ -246,39 +248,41 @@ ASIGNA~~::=~~asignaExitoso\\
 Esta definición permite crear esquemas que, en conjunción con estas respuestas y entre ellos, brindan un mecanismo robusto que da solución a la tarea de presentar adecuadamente los posibles resultados de la acción de asignar paquetes a un mensajero. Dichos posibles resultados son:
 \begin{itemize}
 \item Se cumplen las precondiciones y es posible asignar el paquete.
-\item Se intenta procesar un paquete que no esta en la bodega.
-\item Se intenta procesar un paquete que ya esta asignado.
-\item El mensajero ya no puede atender mas entregas de paquetes.
+\item Se intenta procesar un paquete que no está en la bodega.
+\item Se intenta procesar un paquete que ya está asignado.
+\item El mensajero ya no puede atender más entregas de paquetes.
 \end{itemize} 
 
-La definición de estos esquemas se presenta mas adelante en este documento en la sección 3.6 que es donde se definen las operaciones.
+La definición de estos esquemas se presenta más adelante en este documento en la sección 3.6 que es donde se definen las operaciones.
 
 \subsection{Bodegaje y entrega al comprador}
 
-En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encuentran en la bodega, el objetivo final de la empresa de logística y mensajería es entregar el paquete al comprador, para ello debe de fijar una ruta y asignar el paquete a un mensajero, los paquetes que aún están en la bodega y los que ya fueron puestos en ruta están pendientes de entregar a la persona(comprador) al cual pertenecen.\\
+En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encuentran en la bodega, el objetivo final de la empresa de logística y mensajería es entregar el paquete al comprador, para ello debe de fijar una ruta y asignar el paquete a un mensajero, los paquetes que aún están en la bodega y los que ya fueron puestos en ruta están pendientes de entregar a la persona (comprador) a la cual pertenecen.
 
-\indent Previo a intentar la entrega del paquete, el mensajero debe comprobar la disponibilidad del comprador para recibirlo en la dirección de entrega, para dicho efecto se provee las siguientes etiquetas.
+%\indent Previo a intentar la entrega del paquete, el mensajero debe comprobar la disponibilidad del comprador para recibirlo en la dirección de entrega, para dicho efecto se provee las siguientes etiquetas.
+%
+%\begin{zed}
+%Disponible~~::=~~Si~~|~~No
+%\end{zed}
+%
+%Estas etiquetas le permiten al mensajero marcar la entrega del paquete como exitosa o fallida y se 
 
-\begin{zed}
-Disponible~~::=~~Si~~|~~No
-\end{zed}
+%Estas etiquetas extienden la definición de un comprador agregándole un atributo que permite determinar la disponibilidad del mismo para recibir el paquete.
 
-Estas etiquetas extienden la definición de un comprador agregándole un atributo que permite determinar la disponibilidad del mismo para recibir el paquete.
-
-\begin{schema}{Comprador}
-comprador : Cliente\\
-disponible : Disponible
-\where
-(disponible = Si \lor disponible = No)
-\end{schema}
+%\begin{schema}{Comprador}
+%comprador : Cliente\\
+%disponible : Disponible
+%\where
+%(disponible = Si \lor disponible = No)
+%\end{schema}
 
 La clase principal del sistema se presenta a continuación.
 
 \begin{schema}{EntregaPaquete}
 enBodega, enRuta, pendienteEntrega, entregado : \power Paquete\\
-comprador : \power Comprador\\ 
+comprador : \power Cliente\\ 
 mensajero : \power Mensajero\\
-pertenece : Paquete \pfun Comprador\\
+pertenece : Paquete \pfun Cliente\\
 asignado : Paquete \pfun Mensajero
 \where
 \disjoint \langle pendienteEntrega, entregado \rangle\\
@@ -298,7 +302,7 @@ Inicialmente los paquetes se encuentran en la bodega, no han sido asignados a un
 \begin{schema}{InitEntregaPaquete}
 EntregaPaquete'\\
 mensajero? : \power Mensajero\\
-pertenece? : Paquete \pfun Comprador
+pertenece? : Paquete \pfun Cliente
 \where
 pertenece' = pertenece?\\
 mensajero' = mensajero?\\
@@ -310,7 +314,7 @@ comprador' = \ran pertenece'\\
 pendienteEntrega' = enBodega'
 \end{schema}
 
-El siguiente diagrama muestra el estado del sistema en cuanto a la ubicación de los paquetes una vez inicializado el sistema. Los puntos en café son paquetes que aun no han ingresado a la bodega.
+El siguiente diagrama muestra el estado del sistema en cuanto a la ubicación de los paquetes una vez inicializado el sistema. Los puntos en café son paquetes que aún no han ingresado a la bodega.
 
 \begin{figure}[H]
 \centering
@@ -350,47 +354,67 @@ El siguiente diagrama muestra el estado del sistema en cuanto a la ubicación de
 
 \subsection{Operaciones}
 
-En esta sección se provee la especificación formal de las operaciones que se implementaran en el módulo de \textit{Bodegaje y entrega al comprador}. Se introducen también algunos diagramas de Venn con la intención de que permitan apreciar con mayor claridad del estado de los paquetes luego de que una o varias operaciones son ejecutadas.
+En esta sección se provee la especificación formal de las operaciones que se implementaran en el módulo de \textit{Bodegaje y entrega al comprador}. Para las operaciones que lo permiten, se presenta una tabla en la que se condensa la información referente a las entradas, estados y salidas de las mismas. Finalmente se introducen también algunos diagramas de Venn con el fin de que permitan apreciar con mayor claridad del estado de los paquetes luego de que una o varias operaciones son ejecutadas.
 
 \subsubsection{Consultar paquete}
 
-Mediante esta operación se comprueba que existen paquetes pendientes de entrega en la bodega y que los paquetes requeridos se encuentran actualmente almacenados. La respuesta de esta operación esta garantizada de ser siempre la misma bajo el supuesto de que siempre hay paquetes en la bodega. Si el paquete aun no ha ingresado a la bodega y se ejecuta esta consulta el resultado de la operación es igualmente considerado como exitoso.
+Mediante esta operación se comprueba que existen paquetes pendientes de entrega en la bodega y que los paquetes requeridos se encuentran actualmente almacenados. La respuesta de esta operación está garantizada de ser siempre la misma bajo el supuesto de que siempre hay paquetes en la bodega.
+
+\begin{table}[H]
+\center
+\makegapedcells
+\begin{tabular}{||l|l|l|l||}
+\hline
+\rowcolor[gray]{.8} \textbf{Entrada} & \textbf{Caso} & \textbf{Estado} & \textbf{Salida(Tipo : Respuesta)} \\
+\hline
+\hline
+\multirow{2}{*} {Paquete} & Exitoso & enBodega & consultaPaqueteOK \\
+\cline{2-4} & Exitoso & indefinido & consultaPaqueteOK \\
+\hline 
+\end{tabular}
+\caption{\textit{Consultar Paquete.}} \label{fig:M1}
+\end{table}
+
+Si el paquete aún no ha ingresado a la bodega el estado es \textit{indefinido} ya que no se puede determinar en el alcance del subproceso que se está modelando. Al ejecutarse la consulta el resultado de la operación es igualmente considerado como exitoso, la salida es de tipo \textit{Respuesta}.\\
+El esquema que representa a esta operación es:
 
 \begin{schema}{ConsultarPaquete}
 \Xi EntregaPaquete\\
 p? : Paquete\\
 r! : Respuesta
 \where
-enBodega \neq \emptyset\\
-p? \in enBodega\\
+%enBodega \neq \emptyset\\
+%p? \in enBodega\\
 r! = consultaPaqueteOK
 \end{schema}
 
-La respuesta \textit{consultaPaqueteOK} es de manejo interno en el sistema e indica que la operación se ejecuto. Para el usuario la respuesta recibida sera un registro con los datos consultados si el paquete esta en la bodega o bien un registro en blanco si el paquete no se encuentra, de esta manera se indica que la búsqueda ocurrió y finalizo de forma exitosa aunque el paquete objetivo no fuese encontrado.
+La respuesta \textit{consultaPaqueteOK} es de manejo interno en el sistema e indica que la operación se ejecutó. Para el usuario la respuesta recibida sera un registro con los datos consultados si el paquete está en la bodega o bien un registro en blanco si el paquete no se encuentra, de esta manera se indica que la búsqueda ocurrió y finalizo de forma exitosa, aunque el paquete objetivo no fuese encontrado.
 
 \subsubsection{Desalmacenar paquete y asignar a ruta.}
 
-La operación \textit{DesalmacenarAsignarRuta} permite tomar los paquetes de la bodega y procesarlos. Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero que cubre la ruta que incluye las direcciones de entrega de dichos paquetes, los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.\\ 
+Una vez que los paquetes son tomados de la bodega estos deben ser asignados al mensajero. Los paquetes pasan a estar en ruta y el mensajero es parte del rango de la función \textit{asignado}.
 
-\indent Cuando la asignación concluye con éxito se utiliza el siguiente esquema para reportarlo.
+\begin{table}[H]
+\center
+\makegapedcells
+\begin{tabular}{||l|l|l|l||}
+\hline
+\textbf{Entradas} & \textbf{Caso} & \textbf{Estado} & \textbf{Salida(Tipo : ASIGNA)} \\
+\hline
+\hline
+\multirow{2}{*} {\vtop{\hbox{\strut Paquete}\hbox{\strut Mensajero}}} & Exitoso & enRuta & asignaExitoso\\
+\cline{2-4} & PqtNoDisponible & indefinido & paqueteNoEstaEnBodega \\
+\cline{2-4} & PqtYaAsignado & enRuta & paqueteYaEstaAsignado \\
+\cline{2-4} & MsjNoDisponible & enBodega & mensajeroNoDisponible \\
+\hline 
+\end{tabular}
+\caption{\textit{Desalmacenar paquete y asignar a ruta.}} \label{fig:M1}
+\end{table}
 
-\begin{schema}{AsignaExitoso}
-resultado! : ASIGNA
-\where
-resultado! = asignaExitoso
-\end{schema}
+%La operación es considerada satisfactoria cuando se cumplen todas las precondiciones y fallida en el caso contrario (cuando alguna precondición no se cumple).
 
+\subsubsection*{Salidas de la operación. Esquemas.}
 
-\indent El resultado de esta operación está vinculado al cumplimiento de las precondiciones que definen a la operación exitosa, por lo que la misma es considerada satisfactoria cuando se cumplen todas la precondiciones y fallida en el caso contrario(cuando alguna precondicion no se cumple).\\\\
-\indent En este punto es que toman relevancia las respuestas definidas en la sección \textit{Disponibilidad y asignación de mensajeros}.
-
-\[ RDesalmacenarAsignarRuta \defs\\ 
-\t1 ~~~~(DesalmacenarAsignarRutaOK \wedge AsignaExitoso)\\ 
-\t1 \lor DesalmacenarAsignarRutaPqtNoDisponible\\
-\t1 \lor DesalmacenarAsignarRutaPqtYaAsignado\\
-\t1 \lor DesalmacenarAsignarRutaMsjNoDisponible\]
-
-La operación \textit{RDesalmacenarAsignarRuta} garantiza ser robusta ya que se combina con la especificación \textit{ASIGNA} y cubre todas las posibles salidas de esta operación. A continuacion se presentan los esquemas que detallan dichas salidas:
 \begin{enumerate}
 \item La operación concluye satisfactoriamente.
 
@@ -412,6 +436,19 @@ pertenece' = pertenece\\
 entregado' = entregado\\
 pendienteEntrega' = pendienteEntrega
 \end{schema}
+
+\subsubsection*{Respuesta al caso exitoso.}
+\indent Cuando la asignación concluye con éxito se utiliza el siguiente esquema para reportarlo.
+
+\begin{schema}{AsignaExitoso}
+resultado! : ASIGNA
+\where
+resultado! = asignaExitoso
+\end{schema}
+
+Este esquema es utilizado en conjunción con \textit{DesalmacenarAsignarRutaOK} de la siguiente forma:\\
+
+~~~~~~~~$DesalmacenarAsignarRutaOK \wedge AsignaExitoso$\\
 
 Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \textit{EntregaPaquete} ha sido modificada por el movimiento de paquetes, el estado del sistema se puede apreciar en el siguiente diagrama.
 
@@ -455,10 +492,10 @@ Luego de ejecutar la operación \textit{DesalmacenarAsignarRutaOK} la clase \tex
 
 Dentro del universo de paquetes los puntos color café representan los paquetes que aún no han sido ingresados a la bodega. Los puntos de color negro son los paquetes que están actualmente en la bodega. La acción realizada por la operación \textit{DesalmacenarAsignarRutaOK} está representada por el punto de color rojo y el movimiento que lo convierte en un paquete en ruta indicado por la flecha y el punto de color azul.
 
-\item La operación falla al incumplir alguna precondicion. Se identifican tres posibles causas de falla para esta operación.
+\item La operación falla al incumplir alguna precondición. Se identifican tres posibles causas de falla para esta operación.
 
 \begin{enumerate}
-\item El paquete aun no esta en bodega.
+\item El paquete aún no está en bodega.
 \begin{schema}{DesalmacenarAsignarRutaPqtNoDisponible}
 \Xi EntregaPaquete\\
 p? : Paquete\\
@@ -469,7 +506,7 @@ p? \notin enBodega\\
 r! = paqueteNoEstaEnBodega
 \end{schema}
 
-\item El paquete ya esta asignado.
+\item El paquete ya está asignado.
 \begin{schema}{DesalmacenarAsignarRutaPqtYaAsignado}
 \Xi EntregaPaquete\\
 p? : Paquete\\
@@ -480,7 +517,7 @@ p? \in  \dom asignado\\
 r! = paqueteYaEstaAsignado
 \end{schema}
 
-\item El mensajero ya no puede atender mas asignaciones de paquetes.
+\item El mensajero ya no puede atender más asignaciones de paquetes.
 \begin{schema}{DesalmacenarAsignarRutaMsjNoDisponible}
 \Xi EntregaPaquete\\
 p? : Paquete\\
@@ -496,8 +533,43 @@ r! = mensajeroNoDisponible
 
 En este caso la salida de la operación es una respuesta de tipo \textit{ASIGNA} que es acorde al escenario que se presenta en cada esquema. El estado del sistema es igual al estado inicial (ver Figura 3) ya que la operación no concluyo satisfactoriamente. Preservar este estado es importante ya que esto permite que el paquete esté disponible de nuevo para ser asignado y puesto en ruta en intentos subsiguientes.
 
+\subsubsection*{Operacion Robusta.}
+
+\[ RDesalmacenarAsignarRuta \defs\\ 
+\t1 ~~~~(DesalmacenarAsignarRutaOK \wedge AsignaExitoso)\\ 
+\t1 \lor DesalmacenarAsignarRutaPqtNoDisponible\\
+\t1 \lor DesalmacenarAsignarRutaPqtYaAsignado\\
+\t1 \lor DesalmacenarAsignarRutaMsjNoDisponible\]
+
+La operación \textit{RDesalmacenarAsignarRuta} garantiza ser robusta ya que se combina con la especificación \textit{ASIGNA} y cubre todas las posibles salidas de esta operación.
+
 \subsubsection{Entrega del paquete al comprador.}
-Una vez que el paquete ha sido asignado a un mensajero y por ende puesto en ruta el mensajero se dirige a la dirección de entrega para intentar hacer efectivo el recibo del paquete por parte del comprador. Los dos posibles escenarios que el mensajero puede enfrentar son que el comprador no se encuentre disponible para la entrega en la dirección especificada o que el comprador si este disponible para la entrega. El sistema responderá a estas situaciones utilizando la siguiente definición.
+Una vez que el paquete ha sido asignado a un mensajero y por ende puesto en ruta el mensajero debe intentar hacer la entrega al comprador.
+
+\begin{table}[H]
+\center
+\makegapedcells
+\begin{tabular}{||l|l|l|l||}
+\hline
+\textbf{Entradas} & \textbf{Caso} & \textbf{Estado} & \textbf{Salida(Tipo : ENTREGA)} \\
+\hline
+\hline
+\multirow{2}{*} {\vtop{\hbox{\strut Paquete}\hbox{\strut Mensajero}\hbox{\strut Cliente}\hbox{\strut Disponible}}} & Exitoso & entregado & entregaOK \\
+\cline{2-4} & Fallido & enRuta & entregaFallida \\
+\hline 
+\end{tabular}
+\caption{\textit{Entrega del paquete al comprador.}} \label{fig:M1}
+\end{table} 
+
+Previo a intentar la entrega del paquete, el mensajero debe comprobar la disponibilidad del comprador para recibirlo en la dirección de entrega, para dicho efecto se provee las siguientes etiquetas.
+
+\begin{zed}
+Disponible~~::=~~Si~~|~~No
+\end{zed}
+
+%Estas etiquetas le permiten al mensajero marcar la entrega del paquete como exitosa o fallida y se 
+
+Los dos posibles escenarios que el mensajero puede enfrentar son que el comprador no se encuentre disponible para la entrega en la dirección especificada o que el comprador si este disponible para la entrega.
 
 \begin{zed}
 ENTREGA~~::=~~entregaOK\\
@@ -507,35 +579,17 @@ ENTREGA~~::=~~entregaOK\\
 El modelado de estas situaciones se detalla a continuación:
 
 \begin{enumerate}
-\item El comprador se encuentra en la dirección de entrega y recibe el paquete. Cuando la asignación concluye con éxito se utiliza el siguiente esquema para reportarlo.
-
-\begin{schema}{EntregaCompletada}
-resultado! : ENTREGA
-\where
-resultado! = entregaOK
-\end{schema}
-
-\item El paquete no pudo ser entregado al comprador. El comprador no está disponible para la recepción del paquete.
-\end{enumerate}
-
-Se define una operación robusta que cubre tanto el caso en el que el paquete se entregó con éxito, así como, el caso en el que el paquete no pudo ser entregado al comprador.
-
-\[ REntregaPaquete \defs\\ 
-\t1 (EntregaPaqueteOK \wedge EntregaCompletada)
-\lor EntregaPaqueteFallido \]
-
-\subsubsection*{Entrega completada.}
-Cuando el comprador recibe el paquete el sistema refleja el cambio moviendo el paquete de pendiente entrega a entregado, esto implica que el mismo ya no está en ruta y es por ende desasignado al mensajero.
+\item El comprador se encuentra en la dirección de entrega y recibe el paquete.
 
 \begin{schema}{EntregaPaqueteOK}
 \Delta EntregaPaquete\\
 p? : Paquete\\
 m? : Mensajero\\
-c? : Comprador\\
+c? : Cliente\\
 d? : Disponible\\
 r! : ENTREGA
 \where
-(c? \in \{c : Comprador | d? = Si \spot c\})\\
+d? = Si\\
 entregado' = entregado \cup \{p?\}\\
 enRuta' = enRuta \setminus \{p?\}\\
 asignado' = asignado \setminus \{p? \mapsto m?\}\\
@@ -544,8 +598,42 @@ enBodega' = enBodega\\
 comprador' = comprador\\
 mensajero' = mensajero
 \end{schema}
+ 
+Cuando la asignación concluye con éxito se utiliza el siguiente esquema para reportarlo.
 
-En el siguiente diagrama se puede apreciar el estado del sistema luego de que esta operación se completó de manera satisfactoria.
+\begin{schema}{EntregaCompletada}
+resultado! : ENTREGA
+\where
+resultado! = entregaOK
+\end{schema}
+
+Este esquema es utilizado en conjunción con \textit{DesalmacenarAsignarRutaOK} de la siguiente forma:\\
+
+~~~~~~~~$EntregaPaqueteOK \wedge EntregaCompletada$\\
+
+\item El paquete no pudo ser entregado al comprador. El comprador no está disponible para la recepción del paquete.
+
+\begin{schema}{EtregarPaqueteFallido}
+\Xi EntregaPaquete\\
+p? : Paquete\\
+m? : Mensajero\\
+c? : Cliente\\
+d? : Disponible\\
+r! : ENTREGA
+\where
+d? = No
+\end{schema}
+
+\end{enumerate}
+
+\subsubsection*{Operación Robusta}
+Se define una operación robusta que cubre tanto el caso en el que el paquete se entregó con éxito, así como, el caso en el que el paquete no pudo ser entregado al comprador.
+
+\[ REntregaPaquete \defs\\ 
+\t1 (EntregaPaqueteOK \wedge EntregaCompletada)
+\lor EntregaPaqueteFallido \]
+
+En el siguiente diagrama se puede apreciar el estado del sistema luego de que la entrega se completó de manera satisfactoria.
 
 \begin{figure}[H]
 \centering
@@ -588,23 +676,26 @@ En el siguiente diagrama se puede apreciar el estado del sistema luego de que es
 
 En este estado final del sistema se puede observar que la entrega del paquete ocasiona que el mismo, ilustrado en azul, pase a ser parte del conjunto de los entregados.
 
-\subsubsection*{Entrega fallida.}
-Por el contrario, si el paquete no pudo entregarse al comprador el mismo debe de mantenerse asignado al mensajero hasta que este sea devuelto a la bodega, por lo que el sistema mantiene el paquete en ruta, pero cambia la respuesta obtenida en la operación.
-
-\begin{schema}{EtregarPaqueteFallido}
-\Xi EntregaPaquete\\
-p? : Paquete\\
-m? : Mensajero\\
-c? : Comprador\\
-d? : Disponible\\
-r! : ENTREGA
-\where
-(c? \notin \{c : Comprador | d? = Si \spot c\})
-\end{schema}
-
+\indent Por el contrario, si el paquete no pudo entregarse al comprador el mismo debe de mantenerse asignado al mensajero hasta que este sea devuelto a la bodega, por lo que el sistema mantiene el paquete en ruta, pero cambia la respuesta obtenida en la operación.
 
 \subsubsection{Regresar paquete a bodega.}
-Cuando la entrega del paquete al comprador no concluyo de manera satisfactoria, el paquete debe ser llevado a la bodega, se modifica el estado del sistema por el movimiento del paquete. Esta operación preserva la consistencia en el estado del sistema permitiendo que el paquete pueda ser procesado de nuevo en intentos subsiguientes.
+Cuando la entrega del paquete al comprador no concluyo de manera satisfactoria, el paquete debe ser llevado a la bodega, se modifica el estado del sistema por el movimiento del paquete. 
+
+\begin{table}[H]
+\center
+\makegapedcells
+\begin{tabular}{||l|l|l|l||}
+\hline
+\textbf{Entrada} & \textbf{Caso} & \textbf{Estado} & \textbf{Salida(Tipo : Respuesta)} \\
+\hline
+\hline
+{Paquete} & Exitoso & enBodega & paqueteAlmacenado \\
+\hline 
+\end{tabular}
+\caption{\textit{Regresar paquete a bodega.}} \label{fig:M1}
+\end{table}
+
+El resultado de esta operación siempre es \textit{paqueteAlmacenado} que es de tipo \textit{Resultado} y preserva la consistencia en el estado del sistema permitiendo que el paquete pueda ser procesado de nuevo, por ejemplo se puede intentar la entrega del paquete en los días subsiguientes. El esquema que representa la operación es el siguiente:
 
 \begin{schema}{RegresarBodega}
 \Delta EntregaPaquete\\
@@ -614,7 +705,7 @@ r! : Respuesta
 \where
 p? \notin enBodega\\
 p? \in  enRuta\\
-m? \in mensajero \setminus \ran asignado\\
+m? \in \ran asignado\\
 enRuta' = enRuta \setminus \{p?\}\\
 asignado' = asignado \setminus \{p? \mapsto m?\}\\
 enBodega' = enBodega \cup \{p?\}\\
@@ -624,7 +715,7 @@ entregado' = entregado
 
 Este esquema representa el otro posible estado final del sistema. La representación gráfica del mismo se muestra a continuación. 
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}
 
@@ -662,36 +753,19 @@ Este esquema representa el otro posible estado final del sistema. La representac
 \caption{\textit{Regresar paquete a bodega.}} \label{fig:M1}
 \end{figure}
 
-\newpage
-\section{Resumen de entradas, salidas y respuestas.}
-En esta sección se presenta un resumen de las operaciones del sistema, sus entradas, el subcaso que cubre cada una y el cambio que provocan, así como las respuestas para cada escenario.
+Como se aprecia en la Figura 6, el cambio en el sistema, a nivel de los paquetes, consiste en que el paquete pasa de estar \textit{enRuta} a \textit{enBodega}. El otro cambio es en referencia a la asignación del mensajero y los movimientos que esto provoca en los diferentes conjuntos de paquetes.
 
-\subsection{Cuando la entrada es un paquete.}
-El cuadro que se presenta a continuacion resume el funcionamiento del sistema para cuando la entrada es de tipo \textit{Paquete}.
-
-\begin{table}[H]
-\begin{center}
-\begin{tabular}{|l|l|l|l|l|}
-\hline
-\textbf{Operación} & \textbf{Entrada} & \textbf{Caso} & \textbf{Estado} & \textbf{Respuesta} \\[10pt]
-\hline
-ConsultarPaquete & Paquete & NA & enBodega & \vtop{\hbox{\strut paqueteDisponible-}\hbox{\strut ParaEntrega}} \\[20pt]
-\hline
-\multirow{2}{*}{\vtop{\hbox{\strut RDesalmacenar-}\hbox{\strut AsignarRuta}}} & Paquete & Exitoso & enRuta & asignaOK \\[20pt]
-\cline{3-5} & & Fallido & enBodega & asignaFallido \\[20pt]
-\hline   
-\multirow{2}{*}{REntregarPaquete} & Paquete & Exitoso & entregado & entregaCompletada \\ [20pt]
-\cline{3-5} & & Fallido & enRuta & entregaFallida \\[20pt]
-\hline 
-RegresarBodega & Paquete & NA & enBodega & paqueteAlmacenado \\[20pt]
-\hline
-\end{tabular}
-\caption{\textit{Cuando la entrada es un paquete.}} \label{fig:M1}
-\end{center}
-\end{table}
-
-\subsection{Cuando la entrada es un mensajero}
-En el caso de los mensajeros, como consecuencia de la asignación de los paquetes pueden presentar dos estados a saber: \textit{asignado o disponible}. Este trabajo está centrado en el flujo que describe el movimiento de los paquetes por lo que el tema de la asignación de los mensajeros esta definido en función de los paquetes y se manejan como respuestas (ver sección 3.3).
+%\newpage
+%\section{Resumen de entradas, salidas y respuestas.}
+%En esta sección se presenta un resumen de las operaciones del sistema, sus entradas, el subcaso que cubre cada una y el cambio que provocan, así como las respuestas para cada escenario.
+%
+%\subsection{Cuando la entrada es un paquete.}
+%El cuadro que se presenta a continuación resume el funcionamiento del sistema para cuando la entrada es de tipo \textit{Paquete}.
+%
+%
+%
+%\subsection{Cuando la entrada es un mensajero}
+%En el caso de los mensajeros, como consecuencia de la asignación de los paquetes pueden presentar dos estados a saber: \textit{asignado o disponible}. Este trabajo está centrado en el flujo que describe el movimiento de los paquetes por lo que el tema de la asignación de los mensajeros está definido en función de los paquetes y se manejan como respuestas (ver sección 3.3).
 
 \newpage
 \section{Trabajos futuros.}
@@ -712,3 +786,4 @@ Tanto en el resumen inicial como en la definición del problema se establece que
 \end{thebibliography}
 
 \end{document}
+
