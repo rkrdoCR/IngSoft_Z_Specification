@@ -259,23 +259,6 @@ La definición de estos esquemas se presenta más adelante en este documento en 
 
 En la fase de bodegaje y entrega al comprador los paquetes inicialmente se encuentran en la bodega, el objetivo final de la empresa de logística y mensajería es entregar el paquete al comprador, para ello debe de fijar una ruta y asignar el paquete a un mensajero, los paquetes que aún están en la bodega y los que ya fueron puestos en ruta están pendientes de entregar a la persona (comprador) a la cual pertenecen.
 
-%\indent Previo a intentar la entrega del paquete, el mensajero debe comprobar la disponibilidad del comprador para recibirlo en la dirección de entrega, para dicho efecto se provee las siguientes etiquetas.
-%
-%\begin{zed}
-%Disponible~~::=~~Si~~|~~No
-%\end{zed}
-%
-%Estas etiquetas le permiten al mensajero marcar la entrega del paquete como exitosa o fallida y se 
-
-%Estas etiquetas extienden la definición de un comprador agregándole un atributo que permite determinar la disponibilidad del mismo para recibir el paquete.
-
-%\begin{schema}{Comprador}
-%comprador : Cliente\\
-%disponible : Disponible
-%\where
-%(disponible = Si \lor disponible = No)
-%\end{schema}
-
 La clase principal del sistema se presenta a continuación.
 
 \begin{schema}{EntregaPaquete}
@@ -383,8 +366,6 @@ El esquema que representa a esta operación es:
 p? : Paquete\\
 r! : Respuesta
 \where
-%enBodega \neq \emptyset\\
-%p? \in enBodega\\
 r! = consultaPaqueteOK
 \end{schema}
 
@@ -410,8 +391,6 @@ Una vez que los paquetes son tomados de la bodega estos deben ser asignados al m
 \end{tabular}
 \caption{\textit{Desalmacenar paquete y asignar a ruta.}} \label{fig:M1}
 \end{table}
-
-%La operación es considerada satisfactoria cuando se cumplen todas las precondiciones y fallida en el caso contrario (cuando alguna precondición no se cumple).
 
 \subsubsection*{Salidas de la operación. Esquemas.}
 
@@ -566,8 +545,6 @@ Previo a intentar la entrega del paquete, el mensajero debe comprobar la disponi
 \begin{zed}
 Disponible~~::=~~Si~~|~~No
 \end{zed}
-
-%Estas etiquetas le permiten al mensajero marcar la entrega del paquete como exitosa o fallida y se 
 
 Los dos posibles escenarios que el mensajero puede enfrentar son que el comprador no se encuentre disponible para la entrega en la dirección especificada o que el comprador si este disponible para la entrega.
 
@@ -755,23 +732,19 @@ Este esquema representa el otro posible estado final del sistema. La representac
 
 Como se aprecia en la Figura 6, el cambio en el sistema, a nivel de los paquetes, consiste en que el paquete pasa de estar \textit{enRuta} a \textit{enBodega}. El otro cambio es en referencia a la asignación del mensajero y los movimientos que esto provoca en los diferentes conjuntos de paquetes.
 
-%\newpage
-%\section{Resumen de entradas, salidas y respuestas.}
-%En esta sección se presenta un resumen de las operaciones del sistema, sus entradas, el subcaso que cubre cada una y el cambio que provocan, así como las respuestas para cada escenario.
-%
-%\subsection{Cuando la entrada es un paquete.}
-%El cuadro que se presenta a continuación resume el funcionamiento del sistema para cuando la entrada es de tipo \textit{Paquete}.
-%
-%
-%
-%\subsection{Cuando la entrada es un mensajero}
-%En el caso de los mensajeros, como consecuencia de la asignación de los paquetes pueden presentar dos estados a saber: \textit{asignado o disponible}. Este trabajo está centrado en el flujo que describe el movimiento de los paquetes por lo que el tema de la asignación de los mensajeros está definido en función de los paquetes y se manejan como respuestas (ver sección 3.3).
-
 \newpage
 \section{Trabajos futuros.}
 Tanto en el resumen inicial como en la definición del problema se establece que el alcance de este trabajo se limita a un subproceso que forma parte de un sistema más complejo que envuelve todos los aspectos necesarios para que una compra realizada en el exterior llegue de forma adecuada al comprador.\\[\baselineskip]
-\indent Las posibilidades de trabajos futuros referentes a este tema se pueden abordar tanto desde mejoras a lo que acá se ha presentado, así como, en modelar y formalizar los subprocesos que, fueron mencionados brevemente en el resumen inicial y que anteceden o preceden al flujo desarrollado por los autores de este trabajo.
+\indent Las posibilidades de trabajos futuros referentes a este tema se pueden abordar tanto desde mejoras a lo que acá se ha presentado, así como, en modelar y formalizar los subprocesos que, fueron mencionados brevemente en el resumen inicial y que anteceden o preceden al flujo desarrollado por los autores de este trabajo.\\[\baselineskip]
+\indent Otra posibilidad es enfocar el problema desde el punto de vista de un sistema de rastreo de paquetes, que constituye un software que interactua de manera similar al de manejo de paquetes pero agrega las funcionalidades necesarias para que el comprador pueda revisar donde están sus paquetes, fechas de entrega y otros detalles.
 
+\newpage
+\section{Conclusiones.}
+La importancia de las especificaciones formales reside en proveer un marco que cubra los diferentes flujos de trabajo de las aplicaciones de sotfware, logrando mediante su uso un entendimiento común entre los participantes en la elaboración y puesta en marcha de las mismas.\\[\baselineskip]
+\indent \textbf{Z} es una herramienta que permite la elaboración de especificaciones de forma clara y libre de ambigüedades, sin embargo, cierto conocimiento previo de tipo técnico/académico es requerido para que sea sencillo de asimilar. Por esta razón sentimos que su uso mas fuerte debe ser dentro de un ecosistema de ingenieros o bien en el campo académico, donde puede ser potenciado sin la necesidad de explicar previamente los conceptos matemáticos en los que se fundamenta.\\[\baselineskip]
+\indent Basado en lo anterior se pueden establecer estrategias de diseño para los distintos grupos interesados en algún producto de software, por ejemplo, para interactuar con patrocinadores se puede echar mano de herramientas mas ``amigables'' como algunos diagramas UML, diagramas de flujo o diagramas entidad-relación y mantener una especificación altamente técnica en Z para los programadores y arquitectos de software.\\[\baselineskip]
+\indent La utilización de herramientas ``amigables'' también trae como beneficio su uso como material base para la elaboración de la especificación en Z. Este tipo de herramientas se complemente de manera fácil y precisa con Z en la elaboración de documentos como el que acá se presenta. \\[\baselineskip]
+\indent Finalmente, a pesar de que Z demuestra mucha flexibilidad para el modelado de software, su uso podría estar restringido por la forma del problema, por lo que es de mucha importancia un análisis previo que implique entre otras cosas, un estudio de los datos y las entidades participantes, esto con el fin de intentar determinar cuanto antes la mejor implementación o bien si Z es la herramienta adecuada para el problema en cuestión.
 
 \newpage
 \begin{thebibliography}{00}
